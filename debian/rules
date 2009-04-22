@@ -1,0 +1,156 @@
+#!/usr/bin/make -f
+
+#export DH_VERBOSE=1
+
+export DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+  confflags += --build $(DEB_HOST_GNU_TYPE)
+else
+  confflags += --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+endif
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+LDFLAGS = -Wl,--as-needed
+
+include /usr/share/quilt/quilt.make
+
+configure: configure-stamp
+configure-stamp: $(QUILT_STAMPFN)
+	dh_testdir
+	-test -r /usr/share/misc/config.sub && \
+		cp -f /usr/share/misc/config.sub config.sub && \
+		cp -f /usr/share/misc/config.sub system-config-audit/admin/config.sub
+	-test -r /usr/share/misc/config.guess && \
+		cp -f /usr/share/misc/config.guess config.guess && \
+		cp -f /usr/share/misc/config.guess system-config-audit/admin/config.guess
+	#autoreconf -fv --install
+	./configure \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--sbindir=/sbin \
+		--libdir='$${exec_prefix}'/lib \
+		--libexecdir=/lib \
+		--mandir=/usr/share/man \
+		--enable-shared=audit \
+		--enable-gssapi-krb5 \
+		--with-apparmor \
+		--with-prelude \
+		--with-libwrap \
+		$(confflags)
+	touch $@
+
+build: build-stamp
+build-stamp: configure-stamp
+	dh_testdir
+	$(MAKE) LDFLAGS=$(LDFLAGS)
+	touch $@
+
+unpatch: preunpatch
+preunpatch: configure-stamp
+	dh_testdir
+	dh_testroot
+	[ ! -f Makefile ] || $(MAKE) distclean
+.PHONY: preunpatch
+
+clean: unpatch
+	$(RM) build-stamp configure-stamp
+	dh_clean
+	# Clean modified/regeneratable files
+	$(RM) config.sub config.guess
+	$(RM) system-config-audit/admin/config.sub system-config-audit/admin/config.guess
+	$(RM) system-config-audit/po/stamp-it
+	$(RM) system-config-audit/po/cs.gmo
+	$(RM) system-config-audit/src/.dirstamp
+	$(RM) system-config-audit/src/.deps/.dirstamp
+	#$(RM) system-config-audit/po/Makefile.in.in
+	#$(RM) system-config-audit/INSTALL
+	#$(RM) system-config-audit/aclocal.m4
+	#$(RM) system-config-audit/admin/depcomp
+	#$(RM) system-config-audit/admin/install-sh
+	#$(RM) system-config-audit/admin/ltmain.sh
+	#$(RM) system-config-audit/admin/mkinstalldirs
+	#$(RM) system-config-audit/configure
+	#$(RM) system-config-audit/po/.intltool-merge-cache
+	$(RM) system-config-audit/po/system-config-audit.pot
+	$(RM) system-config-audit/system-config-audit.desktop
+	$(RM) src/mt/*.[ch]
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+
+	# Remove some RedHat specific files
+	$(RM) debian/tmp/etc/rc.d/init.d/auditd
+	$(RM) debian/tmp/etc/sysconfig/auditd
+
+        # Move the library to /lib
+	$(RM) debian/tmp/usr/lib/libaudit.so
+	$(RM) debian/tmp/usr/lib/libauparse.so
+
+	# The Debian way compiles Python packages on install
+	$(RM) debian/tmp/usr/lib/python*/site-packages/_au*.*a
+	$(RM) debian/tmp/usr/lib/python*/site-packages/auparse.*a
+	$(RM) debian/tmp/usr/lib/python*/site-packages/au*.py[co]
+	$(RM) debian/tmp/usr/share/system-config-audit/*.py[co]
+
+my-check:
+	find debian/*aud*/ -mindepth 0 -name DEBIAN -prune -o -not -type d -print|sed -e 's,debian/[^/]*/,,' -e 's/\.gz$$//'
+
+# Build architecture-independent files here.
+binary-indep: build install
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs ChangeLog
+	dh_installdocs
+	dh_installexamples
+	dh_install --sourcedir=debian/tmp --list-missing
+	#dh_installlogrotate #auditd has a equivalent built-in feature
+	dh_installinit -- start 37 S . start 39 0 6 .
+	dh_installman -psystem-config-audit debian/system-config-audit.8
+	dh_lintian
+	chrpath -d $(CURDIR)/debian/audispd-plugins/sbin/audispd-zos-remote
+	chrpath -d $(CURDIR)/debian/audispd-plugins/sbin/audisp-prelude
+	chrpath -d $(CURDIR)/debian/auditd/usr/bin/aulast
+	chrpath -d $(CURDIR)/debian/auditd/usr/bin/aulastlog
+	chrpath -d $(CURDIR)/debian/auditd/usr/bin/ausyscall
+	chrpath -d $(CURDIR)/debian/libaudit0/lib/libauparse.so.0.0.0
+	chrpath -d $(CURDIR)/debian/python-audit/usr/lib/python*/site-packages/_audit.so
+	chrpath -d $(CURDIR)/debian/python-audit/usr/lib/python*/site-packages/auparse.so
+	chrpath -d $(CURDIR)/debian/system-config-audit/lib/system-config-audit-server
+
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	#chmod o-wx debian/auditd/usr/bin/aulastlog
+	#chmod o-wx debian/auditd/sbin/auditctl
+	#chmod o-wx debian/auditd/sbin/auditd
+	#chmod o-wx debian/auditd/sbin/autrace
+	#chmod 750 debian/auditd/sbin/audispd
+	chmod -R o-rwx debian/auditd/var/log/audit
+	chmod -R o-rwx debian/auditd/etc/audit debian/auditd/etc/audisp debian/auditd/etc/audisp/plugins.d
+	dh_pysupport
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure

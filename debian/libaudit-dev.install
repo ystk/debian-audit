@@ -1,0 +1,6 @@
+usr/lib/libaudit.la
+usr/lib/libaudit.a
+usr/lib/libauparse.la
+usr/lib/libauparse.a
+usr/include
+usr/share/man/man3
