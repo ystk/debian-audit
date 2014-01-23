@@ -40,7 +40,7 @@ int force_logs = 0;
 
 /* These are for compatibility with parser */
 unsigned int event_id = -1;
-const char *event_node = NULL;
+const slist *event_node_list = NULL;
 const char *event_key = NULL;
 const char *event_filename = NULL;
 const char *event_exe = NULL;
@@ -150,7 +150,7 @@ static void usage(void)
 {
 	printf("usage: aureport [options]\n"
 	"\t-a,--avc\t\t\tAvc report\n"
-	"\t--auth\t\t\t\tAuthentication report\n"
+	"\t-au,--auth\t\t\tAuthentication report\n"
 	"\t-c,--config\t\t\tConfig change report\n"
 	"\t-cr,--crypto\t\t\tCrypto report\n"
 	"\t-e,--event\t\t\tEvent report\n"
@@ -176,6 +176,7 @@ static void usage(void)
 	"\t-te,--end [end date] [end time]\tending date & time for reports\n"
 	"\t-tm,--terminal\t\t\tTerMinal name report\n"
 	"\t-ts,--start [start date] [start time]\tstarting data & time for reports\n"
+	"\t--tty\t\t\t\tReport about tty keystrokes\n"
 	"\t-u,--user\t\t\tUser name report\n"
 	"\t-v,--version\t\t\tVersion\n"
 	"\t-x,--executable\t\t\teXecutable name report\n"
@@ -573,10 +574,22 @@ int check_params(int count, char *vars[])
 					vars[c]);
 				retval = -1;
 			} else {
-				event_node = strdup(optarg);
-				if (event_node == NULL)
-					retval = -1;
+				snode sn;
 				c++;
+
+				if (!event_node_list) {
+					event_node_list = malloc(sizeof (slist));
+					if (!event_node_list) {
+						retval = -1;
+						break;
+					}
+					slist_create(event_node_list);
+				}
+				
+				sn.str = strdup(optarg);
+				sn.key = NULL;
+				sn.hits=0;
+				slist_append(event_node_list, &sn);
 			}
 			break;
 		case R_SUMMARY_DET:

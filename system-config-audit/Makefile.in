@@ -52,12 +52,13 @@ build_triplet = @build@
 host_triplet = @host@
 libexec_PROGRAMS = src/system-config-audit-server$(EXEEXT)
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(dist_pkgdata_DATA) \
-	$(pkgdata_PYTHON) $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure $(top_srcdir)/src/config.h.in \
-	ABOUT-NLS AUTHORS COPYING ChangeLog INSTALL NEWS admin/compile \
-	admin/config.guess admin/config.rpath admin/config.sub \
-	admin/depcomp admin/install-sh admin/ltmain.sh admin/missing \
+DIST_COMMON = README $(am__configure_deps) $(dist_applications_DATA) \
+	$(dist_pkgdata_DATA) $(pkgdata_PYTHON) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(top_srcdir)/configure \
+	$(top_srcdir)/src/config.h.in ABOUT-NLS AUTHORS COPYING \
+	ChangeLog INSTALL NEWS admin/compile admin/config.guess \
+	admin/config.rpath admin/config.sub admin/depcomp \
+	admin/install-sh admin/ltmain.sh admin/missing \
 	admin/mkinstalldirs admin/py-compile
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
@@ -115,9 +116,9 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 nodist_pkgdataPYTHON_INSTALL = $(INSTALL_DATA)
 pkgdataPYTHON_INSTALL = $(INSTALL_DATA)
 py_compile = $(top_srcdir)/admin/py-compile
-applicationsDATA_INSTALL = $(INSTALL_DATA)
+dist_applicationsDATA_INSTALL = $(INSTALL_DATA)
 dist_pkgdataDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(applications_DATA) $(dist_pkgdata_DATA)
+DATA = $(dist_applications_DATA) $(dist_pkgdata_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
@@ -286,13 +287,14 @@ sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 applicationsdir = $(datarootdir)/applications
 CONFIG_CLEAN_FILES = *.rej *.orig
 SUBDIRS = po
-applications_DATA = system-config-audit.desktop
+dist_applications_DATA = system-config-audit.desktop
 bin_SCRIPTS = src/system-config-audit
 dist_pkgdata_DATA = src/system-config-audit.glade
 pkgdata_PYTHON = src/auditd_config.py src/audit_rules.py \
@@ -554,19 +556,19 @@ uninstall-pkgdataPYTHON:
 	  rm -f "$(DESTDIR)$(pkgdatadir)/$${f}c"; \
 	  rm -f "$(DESTDIR)$(pkgdatadir)/$${f}o"; \
 	done
-install-applicationsDATA: $(applications_DATA)
+install-dist_applicationsDATA: $(dist_applications_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(applicationsdir)" || $(MKDIR_P) "$(DESTDIR)$(applicationsdir)"
-	@list='$(applications_DATA)'; for p in $$list; do \
+	@list='$(dist_applications_DATA)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f=$(am__strip_dir) \
-	  echo " $(applicationsDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(applicationsdir)/$$f'"; \
-	  $(applicationsDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(applicationsdir)/$$f"; \
+	  echo " $(dist_applicationsDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(applicationsdir)/$$f'"; \
+	  $(dist_applicationsDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(applicationsdir)/$$f"; \
 	done
 
-uninstall-applicationsDATA:
+uninstall-dist_applicationsDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(applications_DATA)'; for p in $$list; do \
+	@list='$(dist_applications_DATA)'; for p in $$list; do \
 	  f=$(am__strip_dir) \
 	  echo " rm -f '$(DESTDIR)$(applicationsdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(applicationsdir)/$$f"; \
@@ -891,9 +893,6 @@ install-strip:
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
 
-clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
-
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
@@ -925,8 +924,9 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-applicationsDATA install-dist_pkgdataDATA \
-	install-nodist_pkgdataPYTHON install-pkgdataPYTHON
+install-data-am: install-dist_applicationsDATA \
+	install-dist_pkgdataDATA install-nodist_pkgdataPYTHON \
+	install-pkgdataPYTHON
 
 install-dvi: install-dvi-recursive
 
@@ -964,7 +964,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-applicationsDATA uninstall-binSCRIPTS \
+uninstall-am: uninstall-binSCRIPTS uninstall-dist_applicationsDATA \
 	uninstall-dist_pkgdataDATA uninstall-libexecPROGRAMS \
 	uninstall-nodist_pkgdataPYTHON uninstall-pkgdataPYTHON
 
@@ -979,10 +979,10 @@ uninstall-am: uninstall-applicationsDATA uninstall-binSCRIPTS \
 	distclean-generic distclean-hdr distclean-libtool \
 	distclean-tags distcleancheck distdir distuninstallcheck dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-applicationsDATA install-binSCRIPTS install-data \
-	install-data-am install-dist_pkgdataDATA install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
+	install-binSCRIPTS install-data install-data-am \
+	install-dist_applicationsDATA install-dist_pkgdataDATA \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
 	install-libexecPROGRAMS install-man \
 	install-nodist_pkgdataPYTHON install-pdf install-pdf-am \
 	install-pkgdataPYTHON install-ps install-ps-am install-strip \
@@ -990,7 +990,7 @@ uninstall-am: uninstall-applicationsDATA uninstall-binSCRIPTS \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
 	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
-	uninstall-applicationsDATA uninstall-binSCRIPTS \
+	uninstall-binSCRIPTS uninstall-dist_applicationsDATA \
 	uninstall-dist_pkgdataDATA uninstall-libexecPROGRAMS \
 	uninstall-nodist_pkgdataPYTHON uninstall-pkgdataPYTHON
 
@@ -1035,6 +1035,9 @@ src/system-config-audit: src/system-config-audit.in Makefile
 		< $(srcdir)/src/system-config-audit.in > $@
 
 @INTLTOOL_DESKTOP_RULE@
+
+clean-generic:
+	rm -f system-config-audit.desktop
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

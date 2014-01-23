@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # Makefile.am --
-# Copyright 2004-08 Red Hat Inc., Durham, North Carolina.
+# Copyright 2004-09 Red Hat Inc., Durham, North Carolina.
 # All Rights Reserved.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -67,8 +67,9 @@ SOURCES =
 DIST_SOURCES =
 man3dir = $(mandir)/man3
 am__installdirs = "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man5dir)" \
-	"$(DESTDIR)$(man8dir)"
+	"$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)"
 man5dir = $(mandir)/man5
+man7dir = $(mandir)/man7
 man8dir = $(mandir)/man8
 NROFF = nroff
 MANS = $(man_MANS)
@@ -198,6 +199,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 CONFIG_CLEAN_FILES = *.rej *.orig
@@ -210,9 +212,10 @@ audit_log_acct_message.3 audit_log_user_avc_message.3 \
 audit_log_user_command.3 audit_log_user_comm_message.3 \
 audit_log_user_message.3 audit_log_user_semanage_message.3 \
 audit_open.3 audit_request_rules_list_data.3 \
-audit_request_signal_info.3 audit_request_status.3 audit_set_backlog_limit.3 \
-audit_set_enabled.3 audit_set_failure.3 audit_setloginuid.3 audit_set_pid.3 \
-audit_set_rate_limit.3 audit_update_watch_perms.3 auparse_add_callback.3 \
+audit_request_signal_info.3 audit_request_status.3 audit.rules.7 \
+audit_set_backlog_limit.3 audit_set_enabled.3 audit_set_failure.3 \
+audit_setloginuid.3 audit_set_pid.3 audit_set_rate_limit.3 \
+audit_update_watch_perms.3 auparse_add_callback.3 \
 auparse_destroy.3 auparse_feed.3 auparse_find_field.3 \
 auparse_find_field_next.3 auparse_first_field.3 auparse_first_record.3 \
 auparse_flush_feed.3 auparse_get_field_int.3 auparse_get_field_name.3 \
@@ -360,6 +363,51 @@ uninstall-man5:
 	  echo " rm -f '$(DESTDIR)$(man5dir)/$$inst'"; \
 	  rm -f "$(DESTDIR)$(man5dir)/$$inst"; \
 	done
+install-man7: $(man7_MANS) $(man_MANS)
+	@$(NORMAL_INSTALL)
+	test -z "$(man7dir)" || $(MKDIR_P) "$(DESTDIR)$(man7dir)"
+	@list='$(man7_MANS) $(dist_man7_MANS) $(nodist_man7_MANS)'; \
+	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
+	for i in $$l2; do \
+	  case "$$i" in \
+	    *.7*) list="$$list $$i" ;; \
+	  esac; \
+	done; \
+	for i in $$list; do \
+	  if test -f $(srcdir)/$$i; then file=$(srcdir)/$$i; \
+	  else file=$$i; fi; \
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    7*) ;; \
+	    *) ext='7' ;; \
+	  esac; \
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`; \
+	  inst=`echo $$inst | sed '$(transform)'`.$$ext; \
+	  echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man7dir)/$$inst'"; \
+	  $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man7dir)/$$inst"; \
+	done
+uninstall-man7:
+	@$(NORMAL_UNINSTALL)
+	@list='$(man7_MANS) $(dist_man7_MANS) $(nodist_man7_MANS)'; \
+	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
+	for i in $$l2; do \
+	  case "$$i" in \
+	    *.7*) list="$$list $$i" ;; \
+	  esac; \
+	done; \
+	for i in $$list; do \
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    7*) ;; \
+	    *) ext='7' ;; \
+	  esac; \
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`; \
+	  inst=`echo $$inst | sed '$(transform)'`.$$ext; \
+	  echo " rm -f '$(DESTDIR)$(man7dir)/$$inst'"; \
+	  rm -f "$(DESTDIR)$(man7dir)/$$inst"; \
+	done
 install-man8: $(man8_MANS) $(man_MANS)
 	@$(NORMAL_INSTALL)
 	test -z "$(man8dir)" || $(MKDIR_P) "$(DESTDIR)$(man8dir)"
@@ -442,7 +490,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(MANS)
 installdirs:
-	for dir in "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man8dir)"; do \
+	for dir in "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -497,7 +545,7 @@ install-html: install-html-am
 
 install-info: install-info-am
 
-install-man: install-man3 install-man5 install-man8
+install-man: install-man3 install-man5 install-man7 install-man8
 
 install-pdf: install-pdf-am
 
@@ -523,7 +571,8 @@ ps-am:
 
 uninstall-am: uninstall-man
 
-uninstall-man: uninstall-man3 uninstall-man5 uninstall-man8
+uninstall-man: uninstall-man3 uninstall-man5 uninstall-man7 \
+	uninstall-man8
 
 .MAKE: install-am install-strip
 
@@ -533,12 +582,13 @@ uninstall-man: uninstall-man3 uninstall-man5 uninstall-man8
 	install-data install-data-am install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-man3 \
-	install-man5 install-man8 install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install-man5 install-man7 install-man8 install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-man uninstall-man3 uninstall-man5 uninstall-man8
+	uninstall-man uninstall-man3 uninstall-man5 uninstall-man7 \
+	uninstall-man8
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

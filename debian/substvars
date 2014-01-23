@@ -1,1 +1,0 @@
-shlibs:Depends=libaudit0, libc6 (>= 2.7-1)

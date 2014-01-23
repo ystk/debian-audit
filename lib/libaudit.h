@@ -1,5 +1,5 @@
 /* libaudit.h -- 
- * Copyright 2004-2008 Red Hat Inc., Durham, North Carolina.
+ * Copyright 2004-2009 Red Hat Inc., Durham, North Carolina.
  * All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-
+#include <unistd.h>
 #include <asm/types.h>
 #include <stdint.h>
 #include <sys/socket.h>
@@ -52,7 +52,8 @@ extern "C" {
  * 2200 - 2299 user space actions taken in response to anomalies
  * 2300 - 2399 user space generated LSPP events
  * 2400 - 2499 user space crypto events
- * 2500 - 2999 future user space (maybe integrity labels and related events)
+ * 2500 - 2599 user space virtualization management events
+ * 2600 - 2999 future user space (maybe integrity labels and related events)
  */
 
 #define AUDIT_FIRST_USER_MSG    1100    /* First user space message */
@@ -174,6 +175,16 @@ extern "C" {
 #ifndef AUDIT_ANOM_ABEND
 #define AUDIT_ANOM_ABEND		1701 /* Process ended abnormally */
 #endif
+#define AUDIT_INTEGRITY_FIRST_MSG	1800
+#define AUDIT_INTEGRITY_LAST_MSG	1899
+#ifndef AUDIT_INTEGRITY_DATA
+#define AUDIT_INTEGRITY_DATA		1800 /* Data integrity verification */
+#define AUDIT_INTEGRITY_METADATA 	1801 // Metadata integrity verification
+#define AUDIT_INTEGRITY_STATUS		1802 /* Integrity enable status */
+#define AUDIT_INTEGRITY_HASH		1803 /* Integrity HASH type */
+#define AUDIT_INTEGRITY_PCR		1804 /* PCR invalidation msgs */
+#define AUDIT_INTEGRITY_RULE		1805 /* Policy rule */
+#endif
 #define AUDIT_FIRST_ANOM_MSG		2100
 #define AUDIT_LAST_ANOM_MSG		2199
 #define AUDIT_ANOM_LOGIN_FAILURES	2100 // Failed login limit reached
@@ -233,8 +244,17 @@ extern "C" {
 #define AUDIT_CRYPTO_KEY_USER		2404 /* Create,delete,negotiate */
 #define AUDIT_CRYPTO_FAILURE_USER	2405 /* Fail decrypt,encrypt,randomiz */
 #define AUDIT_CRYPTO_REPLAY_USER	2406 /* Crypto replay detected */
+#define AUDIT_CRYPTO_SESSION		2407 /* Record parameters set during
+						TLS session establishment */
 
 #define AUDIT_LAST_CRYPTO_MSG		2499
+
+#define AUDIT_FIRST_VIRT_MSG		2500
+#define AUDIT_VIRT_CONTROL		2500 /* Start, Pause, Stop VM */
+#define AUDIT_VIRT_RESOURCE		2501 /* Resource assignment */
+#define AUDIT_VIRT_MACHINE_ID		2502 /* Binding of label to VM */
+
+#define AUDIT_LAST_VIRT_MSG		2599
 
 #ifndef AUDIT_FIRST_USER_MSG2
 #define AUDIT_FIRST_USER_MSG2  2100    /* More userspace messages */

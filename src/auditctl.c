@@ -519,6 +519,7 @@ static int setopt(int count, int lineno, char *vars[])
 		break;
 	case 'i':
 		ignore = 1;
+		retval = -2;
 		break;
         case 's':
 		retval = audit_request_status(fd);
@@ -1093,7 +1094,7 @@ static int fileopt(const char *file)
 					fclose(f);
 					return 0;
 				}
-				if (!ignore) {
+				if (ignore == 0) {
 					fclose(f);
 					return -1;
 				}
@@ -1472,7 +1473,13 @@ static int audit_print_reply(struct audit_reply *rep)
 							strcat(perms, "a");
 						printf(" perm=%s", perms);
 						show_syscall = 0;
+					} else if (field == AUDIT_INODE) {
+						// Unsigned items
+						printf(" %s%s%u", name, 
+							audit_operator_to_symbol(op),
+							rep->ruledata->values[i]);
 					} else {
+						// Signed items
 						printf(" %s%s%d", name, 
 							audit_operator_to_symbol(op),
 							rep->rule->values[i]);
@@ -1518,7 +1525,7 @@ static int audit_print_reply(struct audit_reply *rep)
 							audit_elf_to_machine(
 								audit_elf);
 						if (machine < 0)
-							ptr = 0;
+							ptr = NULL;
 						else
 							ptr = 
 							audit_syscall_to_name(i, 

@@ -24,7 +24,7 @@ CONFIG_CLEAN_FILES = *.rej *.orig
 ## Targets
 SUBDIRS = po
 
-applications_DATA = system-config-audit.desktop
+dist_applications_DATA = system-config-audit.desktop
 bin_SCRIPTS = src/system-config-audit
 libexec_PROGRAMS = src/system-config-audit-server
 dist_pkgdata_DATA = src/system-config-audit.glade
@@ -102,3 +102,5 @@ src/system-config-audit: src/system-config-audit.in Makefile
 
 @INTLTOOL_DESKTOP_RULE@
 
+clean-generic:
+	rm -f system-config-audit.desktop

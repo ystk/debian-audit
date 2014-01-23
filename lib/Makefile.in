@@ -57,14 +57,16 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = gen_actiontabs_h$(EXEEXT) \
-	gen_alpha_tables_h$(EXEEXT) gen_errtabs_h$(EXEEXT) \
+@USE_ALPHA_TRUE@am__append_1 = alpha_tables.h
+noinst_PROGRAMS = gen_actiontabs_h$(EXEEXT) gen_errtabs_h$(EXEEXT) \
 	gen_fieldtabs_h$(EXEEXT) gen_flagtabs_h$(EXEEXT) \
 	gen_ftypetabs_h$(EXEEXT) gen_i386_tables_h$(EXEEXT) \
 	gen_ia64_tables_h$(EXEEXT) gen_machinetabs_h$(EXEEXT) \
 	gen_msg_typetabs_h$(EXEEXT) gen_optabs_h$(EXEEXT) \
 	gen_ppc_tables_h$(EXEEXT) gen_s390_tables_h$(EXEEXT) \
-	gen_s390x_tables_h$(EXEEXT) gen_x86_64_tables_h$(EXEEXT)
+	gen_s390x_tables_h$(EXEEXT) gen_x86_64_tables_h$(EXEEXT) \
+	$(am__EXEEXT_1)
+@USE_ALPHA_TRUE@am__append_2 = gen_alpha_tables_h
 subdir = lib
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -87,12 +89,14 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 am_libaudit_la_OBJECTS = libaudit.lo message.lo netlink.lo \
 	lookup_table.lo audit_logging.lo deprecated.lo
 am__objects_1 =
-nodist_libaudit_la_OBJECTS = $(am__objects_1)
+am__objects_2 = $(am__objects_1)
+nodist_libaudit_la_OBJECTS = $(am__objects_2)
 libaudit_la_OBJECTS = $(am_libaudit_la_OBJECTS) \
 	$(nodist_libaudit_la_OBJECTS)
 libaudit_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libaudit_la_LDFLAGS) $(LDFLAGS) -o $@
+@USE_ALPHA_TRUE@am__EXEEXT_1 = gen_alpha_tables_h$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_gen_actiontabs_h_OBJECTS = gen_actiontabs_h-gen_tables.$(OBJEXT)
 gen_actiontabs_h_OBJECTS = $(am_gen_actiontabs_h_OBJECTS)
@@ -100,8 +104,10 @@ gen_actiontabs_h_LDADD = $(LDADD)
 gen_actiontabs_h_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(gen_actiontabs_h_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_gen_alpha_tables_h_OBJECTS =  \
-	gen_alpha_tables_h-gen_tables.$(OBJEXT)
+am__gen_alpha_tables_h_SOURCES_DIST = gen_tables.c gen_tables.h \
+	alpha_table.h
+@USE_ALPHA_TRUE@am_gen_alpha_tables_h_OBJECTS =  \
+@USE_ALPHA_TRUE@	gen_alpha_tables_h-gen_tables.$(OBJEXT)
 gen_alpha_tables_h_OBJECTS = $(am_gen_alpha_tables_h_OBJECTS)
 gen_alpha_tables_h_LDADD = $(LDADD)
 gen_alpha_tables_h_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -218,13 +224,14 @@ SOURCES = $(libaudit_la_SOURCES) $(nodist_libaudit_la_SOURCES) \
 	$(gen_s390_tables_h_SOURCES) $(gen_s390x_tables_h_SOURCES) \
 	$(gen_x86_64_tables_h_SOURCES)
 DIST_SOURCES = $(libaudit_la_SOURCES) $(gen_actiontabs_h_SOURCES) \
-	$(gen_alpha_tables_h_SOURCES) $(gen_errtabs_h_SOURCES) \
-	$(gen_fieldtabs_h_SOURCES) $(gen_flagtabs_h_SOURCES) \
-	$(gen_ftypetabs_h_SOURCES) $(gen_i386_tables_h_SOURCES) \
-	$(gen_ia64_tables_h_SOURCES) $(gen_machinetabs_h_SOURCES) \
-	$(gen_msg_typetabs_h_SOURCES) $(gen_optabs_h_SOURCES) \
-	$(gen_ppc_tables_h_SOURCES) $(gen_s390_tables_h_SOURCES) \
-	$(gen_s390x_tables_h_SOURCES) $(gen_x86_64_tables_h_SOURCES)
+	$(am__gen_alpha_tables_h_SOURCES_DIST) \
+	$(gen_errtabs_h_SOURCES) $(gen_fieldtabs_h_SOURCES) \
+	$(gen_flagtabs_h_SOURCES) $(gen_ftypetabs_h_SOURCES) \
+	$(gen_i386_tables_h_SOURCES) $(gen_ia64_tables_h_SOURCES) \
+	$(gen_machinetabs_h_SOURCES) $(gen_msg_typetabs_h_SOURCES) \
+	$(gen_optabs_h_SOURCES) $(gen_ppc_tables_h_SOURCES) \
+	$(gen_s390_tables_h_SOURCES) $(gen_s390x_tables_h_SOURCES) \
+	$(gen_x86_64_tables_h_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -365,6 +372,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = test
@@ -383,15 +391,14 @@ libaudit_la_LIBADD =
 libaudit_la_DEPENDENCIES = $(libaudit_la_SOURCES) ../config.h
 libaudit_la_LDFLAGS = -Wl,-z,relro
 nodist_libaudit_la_SOURCES = $(BUILT_SOURCES)
-BUILT_SOURCES = actiontabs.h alpha_tables.h errtabs.h fieldtabs.h \
-	flagtabs.h ftypetabs.h i386_tables.h ia64_tables.h \
-	machinetabs.h msg_typetabs.h optabs.h ppc_tables.h \
-	s390_tables.h s390x_tables.h x86_64_tables.h
-
+BUILT_SOURCES = actiontabs.h errtabs.h fieldtabs.h flagtabs.h \
+	ftypetabs.h i386_tables.h ia64_tables.h machinetabs.h \
+	msg_typetabs.h optabs.h ppc_tables.h s390_tables.h \
+	s390x_tables.h x86_64_tables.h $(am__append_1)
 gen_actiontabs_h_SOURCES = gen_tables.c gen_tables.h actiontab.h
 gen_actiontabs_h_CFLAGS = $(AM_CFLAGS) '-DTABLE_H="actiontab.h"'
-gen_alpha_tables_h_SOURCES = gen_tables.c gen_tables.h alpha_table.h
-gen_alpha_tables_h_CFLAGS = $(AM_CFLAGS) '-DTABLE_H="alpha_table.h"'
+@USE_ALPHA_TRUE@gen_alpha_tables_h_SOURCES = gen_tables.c gen_tables.h alpha_table.h
+@USE_ALPHA_TRUE@gen_alpha_tables_h_CFLAGS = $(AM_CFLAGS) '-DTABLE_H="alpha_table.h"'
 gen_errtabs_h_SOURCES = gen_tables.c gen_tables.h errtab.h
 gen_errtabs_h_CFLAGS = $(AM_CFLAGS) '-DTABLE_H="errtab.h"'
 gen_fieldtabs_h_SOURCES = gen_tables.c gen_tables.h fieldtab.h
@@ -1106,8 +1113,8 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLTLIBRARIES
 
 actiontabs.h: gen_actiontabs_h Makefile
 	./gen_actiontabs_h --lowercase --i2s --s2i action > $@
-alpha_tables.h: gen_alpha_tables_h Makefile
-	./gen_alpha_tables_h --lowercase --i2s --s2i alpha_syscall > $@
+@USE_ALPHA_TRUE@alpha_tables.h: gen_alpha_tables_h Makefile
+@USE_ALPHA_TRUE@	./gen_alpha_tables_h --lowercase --i2s --s2i alpha_syscall > $@
 errtabs.h: gen_errtabs_h Makefile
 	./gen_errtabs_h --duplicate-ints --uppercase --i2s --s2i err > $@
 fieldtabs.h: gen_fieldtabs_h Makefile

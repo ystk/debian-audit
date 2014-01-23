@@ -1,141 +1,85 @@
 #!/usr/bin/make -f
+include /usr/share/python/python.mk
 
-#export DH_VERBOSE=1
+# For building swig/ and bindings/python/ for all Python version, these directories are cloned and build in addition to the main library
+PYDEFAULTVER := $(shell pyversions --default --version)                                                                                        
+PYVERS := $(shell pyversions --requested --version debian/control)                                                                             
+PYVERS := $(filter-out $(PYDEFAULTVER), $(PYVERS)) # $(PYDEFAULTVER)
 
-export DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
-export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+%:
+	dh $@ --builddirectory=debian/build --buildsystem=autoconf --with autotools_dev --with python2
 
-ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
-  confflags += --build $(DEB_HOST_GNU_TYPE)
-else
-  confflags += --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
-endif
-
-CFLAGS = -Wall -g
-
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
-else
-	CFLAGS += -O2
-endif
-LDFLAGS = -Wl,--as-needed
-
-include /usr/share/quilt/quilt.make
-
-configure: configure-stamp
-configure-stamp: $(QUILT_STAMPFN)
+override_dh_auto_configure: debian/config-python-stamp $(PYVERS:%=debian/config-python%-stamp)
+debian/config-python-stamp:
 	dh_testdir
-	-test -r /usr/share/misc/config.sub && \
-		cp -f /usr/share/misc/config.sub config.sub && \
-		cp -f /usr/share/misc/config.sub system-config-audit/admin/config.sub
-	-test -r /usr/share/misc/config.guess && \
-		cp -f /usr/share/misc/config.guess config.guess && \
-		cp -f /usr/share/misc/config.guess system-config-audit/admin/config.guess
 	#autoreconf -fv --install
-	./configure \
-		--prefix=/usr \
+	dh_auto_configure -- \
 		--sysconfdir=/etc \
 		--sbindir=/sbin \
 		--libdir='$${exec_prefix}'/lib \
 		--libexecdir=/lib \
-		--mandir=/usr/share/man \
 		--enable-shared=audit \
 		--enable-gssapi-krb5 \
 		--with-apparmor \
 		--with-prelude \
-		--with-libwrap \
-		$(confflags)
+		--with-libwrap
+	touch $@
+debian/config-python%-stamp: debian/config-python-stamp
+	cp -lpr debian/build/swig            debian/build/swig.$*
+	cp -lpr debian/build/bindings/python debian/build/bindings/python.$*
 	touch $@
 
-build: build-stamp
-build-stamp: configure-stamp
+override_dh_auto_clean:
+	$(RM) debian/*-stamp
+	dh_auto_clean
+
+override_dh_auto_build: debian/build-python-stamp $(PYVERS:%=debian/build-python%-stamp)
+debian/build-python-stamp: debian/config-python-stamp
 	dh_testdir
-	$(MAKE) LDFLAGS=$(LDFLAGS)
+	dh_auto_build -- LDFLAGS=-Wl,--as-needed
+	touch $@
+debian/build-python%-stamp: debian/config-python%-stamp debian/build-python-stamp 
+	PYTHON=/usr/bin/python$* $(MAKE) -C debian/build/swig.$*            pyexecdir=$(call py_libdir_sh, $*)
+	PYTHON=/usr/bin/python$* $(MAKE) -C debian/build/bindings/python.$* pyexecdir=$(call py_libdir_sh, $*)
 	touch $@
 
-unpatch: preunpatch
-preunpatch: configure-stamp
+debian/install-python-stamp: debian/build-python-stamp
 	dh_testdir
-	dh_testroot
-	[ ! -f Makefile ] || $(MAKE) distclean
-.PHONY: preunpatch
-
-clean: unpatch
-	$(RM) build-stamp configure-stamp
-	dh_clean
-	# Clean modified/regeneratable files
-	$(RM) config.sub config.guess
-	$(RM) system-config-audit/admin/config.sub system-config-audit/admin/config.guess
-	$(RM) system-config-audit/po/stamp-it
-	$(RM) system-config-audit/po/cs.gmo
-	$(RM) system-config-audit/src/.dirstamp
-	$(RM) system-config-audit/src/.deps/.dirstamp
-	#$(RM) system-config-audit/po/Makefile.in.in
-	#$(RM) system-config-audit/INSTALL
-	#$(RM) system-config-audit/aclocal.m4
-	#$(RM) system-config-audit/admin/depcomp
-	#$(RM) system-config-audit/admin/install-sh
-	#$(RM) system-config-audit/admin/ltmain.sh
-	#$(RM) system-config-audit/admin/mkinstalldirs
-	#$(RM) system-config-audit/configure
-	#$(RM) system-config-audit/po/.intltool-merge-cache
-	$(RM) system-config-audit/po/system-config-audit.pot
-	$(RM) system-config-audit/system-config-audit.desktop
-	$(RM) src/mt/*.[ch]
-
-install: build
-	dh_testdir
-	dh_testroot
-	dh_clean -k
-	dh_installdirs
-
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
-
+	dh_auto_install --sourcedir=debian/build --destdir=debian/tmp
+	touch $@
+debian/install-python%-stamp: debian/build-python%-stamp debian/install-python-stamp
+	PYTHON=/usr/bin/python$* $(MAKE) -C debian/build/swig.$*            pyexecdir=$(call py_libdir_sh, $*) DESTDIR=$(CURDIR)/debian/tmp install
+	PYTHON=/usr/bin/python$* $(MAKE) -C debian/build/bindings/python.$* pyexecdir=$(call py_libdir_sh, $*) DESTDIR=$(CURDIR)/debian/tmp install
+	touch $@
+override_dh_auto_install: debian/install-python-stamp $(PYVERS:%=debian/install-python%-stamp)
 	# Remove some RedHat specific files
 	$(RM) debian/tmp/etc/rc.d/init.d/auditd
 	$(RM) debian/tmp/etc/sysconfig/auditd
 
-        # Move the library to /lib
+	# Move the library to /lib
 	$(RM) debian/tmp/usr/lib/libaudit.so
 	$(RM) debian/tmp/usr/lib/libauparse.so
 
+	# Remove .la files for Debian
+	$(RM) debian/tmp/usr/lib/libauparse.la
+	$(RM) debian/tmp/usr/lib/libaudit.la
+
 	# The Debian way compiles Python packages on install
-	$(RM) debian/tmp/usr/lib/python*/site-packages/_au*.*a
-	$(RM) debian/tmp/usr/lib/python*/site-packages/auparse.*a
-	$(RM) debian/tmp/usr/lib/python*/site-packages/au*.py[co]
+	$(RM) debian/tmp/usr/lib/python*/*-packages/_au*.*a
+	$(RM) debian/tmp/usr/lib/python*/*-packages/auparse.*a
+	$(RM) debian/tmp/usr/lib/python*/*-packages/au*.py[co]
 	$(RM) debian/tmp/usr/share/system-config-audit/*.py[co]
 
-my-check:
-	find debian/*aud*/ -mindepth 0 -name DEBIAN -prune -o -not -type d -print|sed -e 's,debian/[^/]*/,,' -e 's/\.gz$$//'
-
-# Build architecture-independent files here.
-binary-indep: build install
-
-# Build architecture-dependent files here.
-binary-arch: build install
-	dh_testdir
-	dh_testroot
-	dh_installchangelogs ChangeLog
-	dh_installdocs
-	dh_installexamples
+override_dh_install:
 	dh_install --sourcedir=debian/tmp --list-missing
-	#dh_installlogrotate #auditd has a equivalent built-in feature
-	dh_installinit -- start 37 S . start 39 0 6 .
-	dh_installman -psystem-config-audit debian/system-config-audit.8
-	dh_lintian
-	chrpath -d $(CURDIR)/debian/audispd-plugins/sbin/audispd-zos-remote
-	chrpath -d $(CURDIR)/debian/audispd-plugins/sbin/audisp-prelude
-	chrpath -d $(CURDIR)/debian/auditd/usr/bin/aulast
-	chrpath -d $(CURDIR)/debian/auditd/usr/bin/aulastlog
-	chrpath -d $(CURDIR)/debian/auditd/usr/bin/ausyscall
-	chrpath -d $(CURDIR)/debian/libaudit0/lib/libauparse.so.0.0.0
-	chrpath -d $(CURDIR)/debian/python-audit/usr/lib/python*/site-packages/_audit.so
-	chrpath -d $(CURDIR)/debian/python-audit/usr/lib/python*/site-packages/auparse.so
-	chrpath -d $(CURDIR)/debian/system-config-audit/lib/system-config-audit-server
 
-	dh_link
-	dh_strip
-	dh_compress
+override_dh_installlogrotate:
+	# auditd has a equivalent built-in feature
+
+override_dh_installinit:
+	dh_installinit -- start 37 2 3 4 5 . stop 39 0 1 6 .
+
+override_dh_fixperms:
 	dh_fixperms
 	#chmod o-wx debian/auditd/usr/bin/aulastlog
 	#chmod o-wx debian/auditd/sbin/auditctl
@@ -144,13 +88,21 @@ binary-arch: build install
 	#chmod 750 debian/auditd/sbin/audispd
 	chmod -R o-rwx debian/auditd/var/log/audit
 	chmod -R o-rwx debian/auditd/etc/audit debian/auditd/etc/audisp debian/auditd/etc/audisp/plugins.d
-	dh_pysupport
-	dh_makeshlibs
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
 
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
+override_dh_makeshlibs:
+	chrpath -d debian/audispd-plugins/sbin/audispd-zos-remote
+	chrpath -d debian/audispd-plugins/sbin/audisp-prelude
+	chrpath -d debian/auditd/usr/bin/aulast
+	chrpath -d debian/auditd/usr/bin/aulastlog
+	chrpath -d debian/auditd/usr/bin/ausyscall
+	chrpath -d debian/libaudit0/lib/libauparse.so.0.0.0
+	chrpath -d debian/python-audit/usr/lib/python*/*-packages/_audit.so
+	chrpath -d debian/python-audit/usr/lib/python*/*-packages/auparse.so
+	chrpath -d debian/system-config-audit/lib/system-config-audit-server
+	dh_makeshlibs
+
+get-orig-source:
+	-uscan --upstream-version 0
+
+my-check:
+	find debian/*aud*/ -mindepth 0 -name DEBIAN -prune -o -not -type d -print|sed -e 's,debian/[^/]*/,,' -e 's/\.gz$$//'

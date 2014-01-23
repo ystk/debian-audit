@@ -1,3 +1,58 @@
+audit (1:1.7.18-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Revert last upload versioned 2.1.3-1 and made by Russell Coker.
+
+ -- Mehdi Dogguy <mehdi@debian.org>  Tue, 31 Jan 2012 16:34:34 +0100
+
+audit (1.7.18-1) unstable; urgency=low
+
+  * New upstream release.
+    - Fixes inode with != operator (Closes: #539356)
+  * debian/source/format, debian/README.source: Convert to 3.0 (quilt)
+  * debian/patches/htons_family.diff: Don't htons(AF_INET) (Closes: #635202)
+    Thanks to John Feuerstein <john@feurix.com>.
+  * debian/control:
+    - Bump Standards-Version: 3.9.2
+    - Priority: optional for libaudit0.
+    - Depend on missing python-glade2 (Closes: #635199)
+    - Drop quilt from Build-Depends.
+    - Use automake1.10, DebHelper8
+  * debian/rules: Switch to debhelper8 and dh_pyhon2
+  * Build bindings for all Python versions (Closes: #627919)
+  * debian/patches:
+    - fix-out-of-tree-build.diff: Fix an out-of-tree build issue
+    - fix-desktopinfo.diff: Drop Encoding from desktop info file
+    - fix-spelling.diff: Fix spelling mistakes in manual pages
+    - manpage-dash.diff: Quote dashes in manual pages
+  * debian/auditd.init
+    - Change start/stop levels (also debian/rules) (Closes: #586664)
+    - Drop support for customizing language  (Closes: #549186)
+  * debian/audit.*: Add support for pam_loginuid (Closes: #560281)
+
+ -- Philipp Matthias Hahn <pmhahn@debian.org>  Fri, 29 Jul 2011 23:28:00 +0200
+
+audit (1.7.13-1.2) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Don't ship .la files (Closes: #621141).
+  * Add ${python:Depends} for system-config-audit.
+
+ -- Luk Claes <luk@debian.org>  Sat, 11 Jun 2011 09:48:16 +0200
+
+audit (1.7.13-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * debian/patches/ld-no-add-needed.diff
+    - fix build with ld --no-add-needed, patch from bug; Closes: #553961
+  * debian/patches/add_missing_headers.diff
+    - Add missing headers to fix undefined reference to `S_ISREG' linker error,
+      from Ubuntu
+  * debian/python-audit.install, debian/rules
+    - use '*-packages' instead of 'site-packages', diff from Ubuntu
+
+ -- Sandro Tosi <morph@debian.org>  Wed, 25 May 2011 13:55:43 +0200
+
 audit (1.7.13-1) unstable; urgency=low
 
   * New upstream release.
