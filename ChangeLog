@@ -1,3 +1,46 @@
+1.7.18
+- Update time examples in ausearch/report man pages
+- Make auparse handle empty AUSOURCE_FILE_ARRAY correctly (Miloslav Trmač)
+- On i386, audit rules do not work on inode's with a large number (#554553)
+- Fix handling of ignore errors in auditctl
+- Add virtualization event types
+- Update aureport program help and man pages to show all options
+- Fix displaying of inode values to be unsigned integers when listing rules
+
+1.7.17
+- Add tcp_max_per_addr option in auditd.conf to limit concurrent connections
+- Make alpha processor support optional
+- Rearrange shutdown of auditd to allow DAEMON_END event more time
+
+1.7.16
+- If audisp-remote plugin has a queue at exit, use non-zero exit code
+- In auditd, tell libev to stop processing a connection when idle timeout
+- In auditd, tell libev to stop processing a connection when shutting down
+
+1.7.15
+- In audisp-remote, add a sigchld handler
+- In auditd, check for duplicate remote connections before accepting
+- Remove trailing ':' if any are at the end of acct fields in ausearch
+- Update remote logging code to do better sanity check of data
+- Fix audisp-prelude to prefer files if multiple path records are encountered
+- In auditd, disconnect idle clients
+
+1.7.14
+- In auditctl rules allow a0-a3 to be negative numbers
+- Add partial support for IMA integrity auditing
+- In s-c-audit, fix error handling with audit-1.7.12 and later
+- In s-c-audit, fix saving space_left_action
+- In s-c-audit, include many new translations
+- Aureport and ausearch do not need to stat the dispatcher
+- Make auparse handle empty AUSOURCE_FILE_ARRAY correctly (Miloslav Trmač)
+- Allow ausearch/report to specify multiple node names (Lenny Bruzenak)
+- Correct checking of != operator in audit_rule_fieldpair_data
+- Updated syscall table for 2.6.31 kernel
+- In auditd reset syslog warnings if disk space becomes available
+- Fix getloginuid for python bindings
+- In auditsp-remote plugin, timeout network reads (#514090)
+- Add audit.rules man page
+
 1.7.13
 - Disable libev asserts unless --with-debug passed to configure
 - Handle kernel 2.6.29's audit = 0 boot parameter better

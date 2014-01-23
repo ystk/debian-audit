@@ -132,6 +132,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* Define if you want to enable Alpha processor support. */
+#undef WITH_ALPHA
+
 /* Define if you want to enable AppArmor events. */
 #undef WITH_APPARMOR
 

@@ -220,6 +220,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = lib auparse src/mt src/libev src audisp tools swig bindings init.d \
@@ -680,7 +681,7 @@ uninstall-am:
 
 
 clean-generic:
-	rm -rf autom4te*.cache zos-remote-policy
+	rm -rf autom4te*.cache 
 	rm -f *.rej *.orig *.lang
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
