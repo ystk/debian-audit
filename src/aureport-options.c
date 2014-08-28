@@ -1,5 +1,6 @@
 /* aureport-options.c - parse commandline options and configure aureport
- * Copyright 2005-08 Red Hat Inc., Durham, North Carolina.
+ * Copyright 2005-08,2010-11,2014 Red Hat Inc., Durham, North Carolina.
+ * Copyright (c) 2011 IBM Corp.
  * All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,6 +19,7 @@
  *
  * Authors:
  *     Steve Grubb <sgrubb@redhat.com>
+ *     Marcelo Henrique Cerri <mhcerri@br.ibm.com>
  */
 
 #include "config.h"
@@ -37,10 +39,11 @@
 /* Global vars that will be accessed by the main program */
 char *user_file = NULL;
 int force_logs = 0;
+int no_config = 0;
 
 /* These are for compatibility with parser */
 unsigned int event_id = -1;
-const slist *event_node_list = NULL;
+slist *event_node_list = NULL;
 const char *event_key = NULL;
 const char *event_filename = NULL;
 const char *event_exe = NULL;
@@ -49,8 +52,11 @@ const char *event_hostname = NULL;
 const char *event_terminal = NULL;
 const char *event_subject = NULL;
 const char *event_object = NULL;
+const char *event_uuid = NULL;
+const char *event_vmname = NULL;
 int event_exit = 0, event_exit_is_set = 0;
-int event_ppid = -1, event_session_id = -1;
+int event_ppid = -1, event_session_id = -2;
+int event_debug = 0;
 
 /* These are used by aureport */
 const char *dummy = "dummy";
@@ -72,7 +78,7 @@ enum {  R_INFILE, R_TIME_END, R_TIME_START, R_VERSION, R_SUMMARY, R_LOG_TIMES,
 	R_AVCS, R_SYSCALLS, R_PIDS, R_EVENTS, R_ACCT_MODS,  
 	R_INTERPRET, R_HELP, R_ANOMALY, R_RESPONSE, R_SUMMARY_DET, R_CRYPTO,
 	R_MAC, R_FAILED, R_SUCCESS, R_ADD, R_DEL, R_AUTH, R_NODE, R_IN_LOGS,
-	R_KEYS, R_TTY };
+	R_KEYS, R_TTY, R_NO_CONFIG };
 
 static struct nv_pair optiontab[] = {
 	{ R_AUTH, "-au" },
@@ -107,6 +113,8 @@ static struct nv_pair optiontab[] = {
 	{ R_MAC, "-ma" },
 	{ R_MAC, "--mac" },
 	{ R_NODE, "--node" },
+	{ R_NO_CONFIG, "-nc" },
+	{ R_NO_CONFIG, "--no-config" },
 	{ R_ANOMALY, "-n" },
 	{ R_ANOMALY, "--anomaly" },
 	{ R_PIDS, "-p" },
@@ -165,8 +173,9 @@ static void usage(void)
 	"\t-k,--key\t\t\tKey report\n"
 	"\t-m,--mods\t\t\tModification to accounts report\n"
 	"\t-ma,--mac\t\t\tMandatory Access Control (MAC) report\n"
-	"\t--node <node name>\t\tOnly events from a specific node\n"
 	"\t-n,--anomaly\t\t\taNomaly report\n"
+	"\t-nc,--no-config\t\t\tDon't include config events\n"
+	"\t--node <node name>\t\tOnly events from a specific node\n"
 	"\t-p,--pid\t\t\tPid report\n"
 	"\t-r,--response\t\t\tResponse to anomaly report\n"
 	"\t-s,--syscall\t\t\tSyscall report\n"
@@ -609,6 +618,9 @@ int check_params(int count, char *vars[])
 			break;
 		case R_IN_LOGS:
 			force_logs = 1;
+			break;
+		case R_NO_CONFIG:
+			no_config = 1;
 			break;
 		case R_VERSION:
 	                printf("aureport version %s\n", VERSION);

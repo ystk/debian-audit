@@ -1,5 +1,5 @@
 /* auparse.h --
- * Copyright 2006-08 Red Hat Inc., Durham, North Carolina.
+ * Copyright 2006-08,2012,2014 Red Hat Inc., Durham, North Carolina.
  * All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -43,6 +43,7 @@ typedef void (*auparse_callback_ptr)(auparse_state_t *au,
 auparse_state_t *auparse_init(ausource_t source, const void *b);
 int auparse_feed(auparse_state_t *au, const char *data, size_t data_len);
 int auparse_flush_feed(auparse_state_t *au);
+int auparse_feed_has_data(const auparse_state_t *au);
 void auparse_add_callback(auparse_state_t *au, auparse_callback_ptr callback,
 			void *user_data, user_destroy user_destroy_func);
 int auparse_reset(auparse_state_t *au);
@@ -82,6 +83,7 @@ int auparse_goto_record_num(auparse_state_t *au, unsigned int num);
 
 /* Accessors to record data */
 int auparse_get_type(auparse_state_t *au);
+const char *auparse_get_type_name(auparse_state_t *au);
 unsigned int auparse_get_line_number(auparse_state_t *au);
 const char *auparse_get_filename(auparse_state_t *au);
 int auparse_first_field(auparse_state_t *au);

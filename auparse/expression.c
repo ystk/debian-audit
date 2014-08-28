@@ -22,6 +22,7 @@
 */
 
 #include <assert.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,11 @@ expr_free(struct expr *expr)
 		free(expr->v.p.field.name);
 		break;
 
+	case EO_REGEXP_MATCHES:
+		regfree(expr->v.regexp);
+		free(expr->v.regexp);
+		break;
+
 	default:
 		abort();
 	}
@@ -81,15 +87,18 @@ expr_free(struct expr *expr)
    primary-expression: comparison-expression
 
    comparison-expression: field op value
+   comparison-expression: field-escape "regexp" regexp-value
    field: string
    field: field-escape string
-   value: string */
+   value: string
+   regexp-value: string
+   regexp-value: regexp */
 
 /* Token types */
 enum token_type {
 	/* EO_* */
-	T_LEFT_PAREN = NUM_EO_VALUES, T_RIGHT_PAREN, T_STRING, T_FIELD_ESCAPE,
-	T_UNKNOWN, T_EOF
+	T_LEFT_PAREN = NUM_EO_VALUES, T_RIGHT_PAREN, T_STRING, T_REGEXP,
+	T_FIELD_ESCAPE, T_UNKNOWN, T_EOF
 };
 
 /* Expression parsing status */
@@ -161,28 +170,31 @@ lex(struct parsing *p)
 		p->token = EO_NOT;
 		break;
 
-	case '"': {
-		char *buf;
+	case '"': case '/': {
+		char *buf, delimiter;
 		size_t dest, buf_size;
 
+		delimiter = *p->src;
 		buf_size = 8;
 		buf = parser_malloc(p, buf_size);
 		if (buf == NULL)
 			return -1;
 		p->src++;
 		dest = 0;
-		while (*p->src != '"') {
+		while (*p->src != delimiter) {
 			if (*p->src == '\0') {
-				*p->error = strdup("Terminating quote missing");
+				*p->error = strdup("Terminating delimiter "
+						   "missing");
 				free(buf);
 				return -1;
 			}
 			if (*p->src == '\\') {
 				p->src++;
-				if (*p->src != '\\' && *p->src != '"') {
-					*p->error = NULL;
-					asprintf(p->error, "Unknown escape "
-						 "sequence ``\\%c''", *p->src);
+				if (*p->src != '\\' && *p->src != delimiter) {
+					if (asprintf(p->error, "Unknown escape "
+						     "sequence ``\\%c''",
+						     *p->src) < 0)
+						*p->error = NULL;
 					free(buf);
 					return -1;
 				}
@@ -191,8 +203,8 @@ lex(struct parsing *p)
 			   NUL. */
 			if (dest + 1 >= buf_size) {
 				if (buf_size > SIZE_MAX / 2) {
-					*p->error = strdup("Quoted string too "
-							   "long");
+					*p->error = strdup("Delimited string "
+							   "too long");
 					free(buf);
 					return -1;
 				}
@@ -212,7 +224,7 @@ lex(struct parsing *p)
 		p->token_value = parser_realloc(p, buf, dest + 1);
 		if (p->token_value == NULL)
 			return -1;
-		p->token = T_STRING;
+		p->token = delimiter == '/' ? T_REGEXP : T_STRING;
 		break;
 	}
 
@@ -370,17 +382,17 @@ parse_timestamp_value(struct expr *dest, struct parsing *p)
 	if (sscanf(p->token_value, "ts:%jd.%u", &sec,
 		   &dest->v.p.value.timestamp.milli)
 	    != 2) {
-		*p->error = NULL;
-		asprintf(p->error, "Invalid timestamp value `%.*s'",
-			 p->token_len, p->token_start);
+		if (asprintf(p->error, "Invalid timestamp value `%.*s'",
+			     p->token_len, p->token_start) < 0)
+			*p->error = NULL;
 		return -1;
 	}
 	/* FIXME: validate milli */
 	dest->v.p.value.timestamp.sec = sec;
 	if (dest->v.p.value.timestamp.sec != sec) {
-		*p->error = NULL;
-		asprintf(p->error, "Timestamp overflow in `%.*s'", p->token_len,
-			 p->token_start);
+		if (asprintf(p->error, "Timestamp overflow in `%.*s'",
+			     p->token_len, p->token_start) < 0)
+			*p->error = NULL;
 		return -1;
 	}
 	dest->precomputed_value = 1;
@@ -399,9 +411,9 @@ parse_record_type_value(struct expr *dest, struct parsing *p)
 	assert(p->token == T_STRING);
 	type = audit_name_to_msg_type(p->token_value);
 	if (type < 0) {
-		*p->error = NULL;
-		asprintf(p->error, "Invalid record type `%.*s'", p->token_len,
-			 p->token_start);
+		if (asprintf(p->error, "Invalid record type `%.*s'",
+			     p->token_len, p->token_start) < 0)
+			*p->error = NULL;
 		return -1;
 	}
 	dest->v.p.value.int_value = type;
@@ -428,6 +440,56 @@ parse_virtual_field_value(struct expr *dest, struct parsing *p)
 	}
 }
 
+/* Parse a \regexp comparison-expression string in *P, with \regexp parsed.
+   Use or free EXPR.
+   On success, return the parsed comparison-expression.
+   On error, set *P->ERROR to an error string (for free()) or NULL, and return
+   NULL. */
+static struct expr *
+parse_comparison_regexp(struct parsing *p, struct expr *res)
+{
+	int err;
+
+	if (lex(p) != 0)
+		goto err_res;
+	if (p->token != T_STRING && p->token != T_REGEXP) {
+		if (asprintf(p->error, "Regexp expected, got `%.*s'",
+			     p->token_len, p->token_start) < 0)
+			*p->error = NULL;
+		goto err_res;
+	}
+	res->v.regexp = parser_malloc(p, sizeof(*res->v.regexp));
+	if (res->v.regexp == NULL)
+		goto err_res;
+	err = regcomp(res->v.regexp, p->token_value, REG_EXTENDED | REG_NOSUB);
+	if (err != 0) {
+		size_t err_size;
+		char *err_msg;
+
+		err_size = regerror(err, res->v.regexp, NULL, 0);
+		err_msg = parser_malloc(p, err_size);
+		if (err_msg == NULL)
+			goto err_res_regexp;
+		regerror(err, res->v.regexp, err_msg, err_size);
+		if (asprintf(p->error, "Invalid regexp: %s", err_msg) < 0)
+			*p->error = NULL;
+		free(err_msg);
+		goto err_res_regexp;
+	}
+	res->op = EO_REGEXP_MATCHES;
+	if (lex(p) != 0) {
+		expr_free(res);
+		return NULL;
+	}
+	return res;
+
+err_res_regexp:
+	free(res->v.regexp);
+err_res:
+	free(res);
+	return NULL;
+}
+
 /* Parse a comparison-expression string in *P.
    On success, return the parsed comparison-expression.
    On error, set *P->ERROR to an error string (for free()) or NULL, and return
@@ -448,12 +510,15 @@ parse_comparison(struct parsing *p)
 					   "escape");
 			goto err_res;
 		}
+		if (strcmp(p->token_value, "regexp") == 0)
+			return parse_comparison_regexp(p, res);
 		res->virtual_field = 1;
 		if (parse_escaped_field_name(&res->v.p.field.id, p->token_value)
 		    != 0) {
-			*p->error = NULL;
-			asprintf(p->error, "Unknown escaped field name `%.*s'",
-				 p->token_len, p->token_start);
+			if (asprintf(p->error,
+				     "Unknown escaped field name `%.*s'",
+				     p->token_len, p->token_start) < 0)
+				*p->error = NULL;
 			goto err_res;
 		}
 	} else {
@@ -471,9 +536,9 @@ parse_comparison(struct parsing *p)
 		if (lex(p) != 0)
 			goto err_field;
 		if (p->token != T_STRING) {
-			*p->error = NULL;
-			asprintf(p->error, "Value expected, got `%.*s'",
-				 p->token_len, p->token_start);
+			if (asprintf(p->error, "Value expected, got `%.*s'",
+				     p->token_len, p->token_start) < 0)
+				*p->error = NULL;
 			goto err_field;
 		}
 		res->precomputed_value = 0;
@@ -491,16 +556,16 @@ parse_comparison(struct parsing *p)
 		if (lex(p) != 0)
 			goto err_field;
 		if (p->token != T_STRING) {
-			*p->error = NULL;
-			asprintf(p->error, "Value expected, got `%.*s'",
-				 p->token_len, p->token_start);
+			if (asprintf(p->error, "Value expected, got `%.*s'",
+				     p->token_len, p->token_start) < 0)
+				*p->error = NULL;
 			goto err_field;
 		}
 		if (res->virtual_field == 0) {
-			*p->error = NULL;
-			asprintf (p->error, "Field `%s' does not support "
-				  "value comparison",
-				  res->v.p.field.name);
+			if (asprintf(p->error, "Field `%s' does not support "
+				     "value comparison",
+				     res->v.p.field.name) < 0)
+				*p->error = NULL;
 			goto err_field;
 		} else {
 			if (parse_virtual_field_value(res, p) != 0)
@@ -513,9 +578,9 @@ parse_comparison(struct parsing *p)
 		break;
 
 	default:
-		*p->error = NULL;
-		asprintf(p->error, "Operator expected, got `%.*s'",
-			 p->token_len, p->token_start);
+		if (asprintf(p->error, "Operator expected, got `%.*s'",
+			     p->token_len, p->token_start) < 0)
+			*p->error = NULL;
 		goto err_field;
 	}
 	return res;
@@ -561,9 +626,10 @@ parse_primary(struct parsing *p)
 		if (e == NULL)
 			return NULL;
 		if (p->token != T_RIGHT_PAREN) {
-			*p->error = NULL;
-			asprintf(p->error, "Right paren expected, got `%.*s'",
-				 p->token_len, p->token_start);
+			if (asprintf(p->error,
+				     "Right paren expected, got `%.*s'",
+				     p->token_len, p->token_start) < 0)
+				*p->error = NULL;
 			goto err_e;
 		}
 		if (lex(p) != 0)
@@ -575,13 +641,11 @@ parse_primary(struct parsing *p)
 		return parse_comparison(p);
 
 	default:
-		*p->error = NULL;
-		asprintf(p->error, "Unexpected token `%.*s'", p->token_len,
-			 p->token_start);
+		if (asprintf(p->error, "Unexpected token `%.*s'", p->token_len,
+			     p->token_start) < 0)
+			*p->error = NULL;
 		return NULL;
 	}
-	abort();		/* Should never get here */
-
 err_e:
 	expr_free(e);
 	return NULL;
@@ -683,9 +747,9 @@ expr_parse(const char *string, char **error)
 	res = parse_or(&p);
 	if (res != NULL && p.token != T_EOF) {
 		expr_free(res);
-		*error = NULL;
-		asprintf(error, "Unexpected trailing token `%.*s'",
-			 p.token_len, p.token_start);
+		if (asprintf(error, "Unexpected trailing token `%.*s'",
+			     p.token_len, p.token_start) < 0)
+			*error = NULL;
 		goto err;
 	}
 	free(p.token_value);
@@ -771,6 +835,35 @@ expr_create_field_exists(const char *field)
 		goto err_res;
 	return res;
 
+err_res:
+	free(res);
+err:
+	return NULL;
+}
+
+/* Create a \regexp expression for regexp comparison.
+   On success, return the created expression.
+   On error, set errno and return NULL. */
+struct expr *
+expr_create_regexp_expression(const char *regexp)
+{
+	struct expr *res;
+
+	res = malloc(sizeof(*res));
+	if (res == NULL)
+		goto err;
+	res->v.regexp = malloc(sizeof(*res->v.regexp));
+	if (res->v.regexp == NULL)
+		goto err_res;
+	if (regcomp(res->v.regexp, regexp, REG_EXTENDED | REG_NOSUB) != 0) {
+		errno = EINVAL;
+		goto err_res_regexp;
+	}
+	res->op = EO_REGEXP_MATCHES;
+	return res;
+
+err_res_regexp:
+	free(res->v.regexp);
 err_res:
 	free(res);
 err:
@@ -971,6 +1064,9 @@ expr_eval(auparse_state_t *au, rnode *record, const struct expr *expr)
 		assert(expr->virtual_field == 0);
 		nvlist_first(&record->nv);
 		return nvlist_find_name(&record->nv, expr->v.p.field.name) != 0;
+
+	case EO_REGEXP_MATCHES:
+		return regexec(expr->v.regexp, record->record, 0, NULL, 0) == 0;
 
 	default:
 		abort();
