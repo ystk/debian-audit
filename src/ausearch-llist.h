@@ -1,6 +1,7 @@
 /*
 * ausearch-llist.h - Header file for ausearch-llist.c
-* Copyright (c) 2005-2008 Red Hat Inc., Durham, North Carolina.
+* Copyright (c) 2005-2008, 2013 Red Hat Inc., Durham, North Carolina.
+* Copyright (c) 2011 IBM Corp.
 * All Rights Reserved.
 *
 * This software may be freely redistributed and/or modified under the
@@ -19,6 +20,7 @@
 *
 * Authors:
 *   Steve Grubb <sgrubb@redhat.com>
+*   Marcelo Henrique Cerri <mhcerri@br.ibm.com>
 */
 
 #ifndef AULIST_HEADER
@@ -62,8 +64,10 @@ typedef struct
   slist *key;           // key field
   char *terminal;       // terminal
   char *comm;           // comm name
-  alist *avc;		// avcs for the event
-  char *acct;		// account used when uid is invalid
+  alist *avc;           // avcs for the event
+  char *acct;           // account used when uid is invalid
+  char *uuid;           // virtual machine unique universal identifier
+  char *vmname;         // virtual machine name
 } search_items;
 
 /* This is the node of the linked list. Any data elements that are per
@@ -72,6 +76,7 @@ typedef struct _lnode{
   char *message;		// The whole unparsed message
   int type;             	// message type (KERNEL, USER, LOGIN, etc)
   unsigned long long a0;	// argv 0
+  unsigned long long a1;	// argv 1
   unsigned int item;		// Which item of the same event
   struct _lnode* next;		// Next node pointer
 } lnode;
