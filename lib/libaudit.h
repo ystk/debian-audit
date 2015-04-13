@@ -1,5 +1,5 @@
 /* libaudit.h -- 
- * Copyright 2004-2013 Red Hat Inc., Durham, North Carolina.
+ * Copyright 2004-2014 Red Hat Inc., Durham, North Carolina.
  * All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -214,6 +214,14 @@ extern "C" {
 #endif
 
 /* New kernel event definitions since 2.6.30 */
+#ifndef AUDIT_SET_FEATURE
+#define AUDIT_SET_FEATURE       1018    /* Turn an audit feature on or off */
+#endif
+
+#ifndef AUDIT_GET_FEATURE
+#define AUDIT_GET_FEATURE       1019    /* Get which features are enabled */
+#endif
+
 #ifndef AUDIT_MMAP
 #define AUDIT_MMAP		1323 /* Descriptor and flags in mmap */
 #endif
@@ -388,6 +396,9 @@ struct audit_reply {
 	struct nlmsgerr         *error;
 	struct audit_sig_info   *signal_info;
 	struct daemon_conf      *conf;
+#if HAVE_DECL_AUDIT_FEATURE_VERSION
+	struct audit_features	*features;
+#endif
 	};
 };
 
@@ -479,6 +490,7 @@ extern void audit_number_to_errmsg(int errnumber, const char *opt);
 extern int audit_request_status(int fd);
 extern int audit_is_enabled(int fd);
 extern int get_auditfail_action(auditfail_t *failmode);
+extern int audit_request_features(int fd);
 
 /* AUDIT_SET */
 typedef enum { WAIT_NO, WAIT_YES } rep_wait_t;
@@ -487,6 +499,8 @@ extern int  audit_set_enabled(int fd, uint32_t enabled);
 extern int  audit_set_failure(int fd, uint32_t failure);
 extern int  audit_set_rate_limit(int fd, uint32_t limit);
 extern int  audit_set_backlog_limit(int fd, uint32_t limit);
+extern int  audit_set_feature(int fd, unsigned feature, unsigned value, unsigned lock);
+extern int  audit_set_loginuid_immutable(int fd);
 
 /* AUDIT_LIST_RULES */
 extern int  audit_request_rules_list_data(int fd);

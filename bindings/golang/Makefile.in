@@ -15,21 +15,21 @@
 @SET_MAKE@
 
 # Makefile.am --
-# Copyright 2004-09,2012,2014 Red Hat Inc., Durham, North Carolina.
+# Copyright 2014 Red Hat Inc., Durham, North Carolina.
 # All Rights Reserved.
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful,
+# This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # Authors:
@@ -100,8 +100,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = docs
-DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
+subdir = bindings/golang
+DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
+	$(dist_check_SCRIPTS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/cap-ng.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
@@ -132,41 +133,6 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-man3dir = $(mandir)/man3
-am__installdirs = "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man5dir)" \
-	"$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)"
-man5dir = $(mandir)/man5
-man7dir = $(mandir)/man7
-man8dir = $(mandir)/man8
-NROFF = nroff
-MANS = $(man_MANS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -307,41 +273,11 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-CONFIG_CLEAN_FILES = *.rej *.orig
-EXTRA_DIST = $(man_MANS)
-man_MANS = audit_add_rule_data.3 audit_add_watch.3 auditctl.8 auditd.8 \
-auditd.conf.5 audit_delete_rule_data.3 audit_detect_machine.3 \
-audit_encode_nv_string.3 audit_getloginuid.3 \
-audit_get_reply.3 auparse_goto_record_num.3 \
-audit_log_acct_message.3 audit_log_user_avc_message.3 \
-audit_log_user_command.3 audit_log_user_comm_message.3 \
-audit_log_user_message.3 audit_log_semanage_message.3 \
-audit_open.3 audit_request_rules_list_data.3 \
-audit_request_signal_info.3 audit_request_status.3 audit.rules.7 \
-audit_set_backlog_limit.3 audit_set_enabled.3 audit_set_failure.3 \
-audit_setloginuid.3 audit_set_pid.3 audit_set_rate_limit.3 \
-audit_update_watch_perms.3 auparse_add_callback.3 \
-auparse_destroy.3 auparse_feed.3 auparse_feed_has_data.3 auparse_find_field.3 \
-auparse_find_field_next.3 auparse_first_field.3 auparse_first_record.3 \
-auparse_flush_feed.3 auparse_get_field_int.3 auparse_get_field_name.3 \
-auparse_get_field_str.3 auparse_get_field_type.3 auparse_get_filename.3 \
-auparse_get_line_number.3 auparse_get_milli.3 \
-auparse_get_node.3 auparse_get_num_fields.3 \
-auparse_get_num_records.3 auparse_get_record_text.3 \
-auparse_get_serial.3 auparse_get_time.3 auparse_get_timestamp.3 \
-auparse_get_type.3 auparse_init.3 auparse_interpret_field.3 \
-auparse_next_event.3 auparse_next_field.3 auparse_next_record.3 \
-auparse_node_compare.3 auparse_reset.3 auparse_timestamp_compare.3 \
-ausearch-expression.5 \
-aureport.8 ausearch.8 ausearch_add_item.3 ausearch_add_interpreted_item.3 \
-ausearch_add_expression.3 ausearch_add_timestamp_item.3 ausearch_add_regex.3 \
-ausearch_add_timestamp_item_ex.3 ausearch_clear.3 \
-ausearch_next_event.3 ausearch_set_stop.3 \
-autrace.8 get_auditfail_action.3 set_aumessage_mode.3 \
-audispd.8 audispd.conf.5 audispd-zos-remote.8 libaudit.conf.5 \
-augenrules.8 \
-zos-remote.conf.5 
-
+CONFIG_CLEAN_FILES = *.loT *.rej *.orig
+EXTRA_DIST = audit.go
+LIBDIR = lib
+GODIR = $(LIBDIR)/golang/src/pkg/redhat.com/audit
+dist_check_SCRIPTS = test.go
 all: all-am
 
 .SUFFIXES:
@@ -354,9 +290,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu docs/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu bindings/golang/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu docs/Makefile
+	  $(AUTOMAKE) --gnu bindings/golang/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -381,178 +317,6 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-install-man3: $(man_MANS)
-	@$(NORMAL_INSTALL)
-	@list1=''; \
-	list2='$(man_MANS)'; \
-	test -n "$(man3dir)" \
-	  && test -n "`echo $$list1$$list2`" \
-	  || exit 0; \
-	echo " $(MKDIR_P) '$(DESTDIR)$(man3dir)'"; \
-	$(MKDIR_P) "$(DESTDIR)$(man3dir)" || exit 1; \
-	{ for i in $$list1; do echo "$$i"; done;  \
-	if test -n "$$list2"; then \
-	  for i in $$list2; do echo "$$i"; done \
-	    | sed -n '/\.3[a-z]*$$/p'; \
-	fi; \
-	} | while read p; do \
-	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; echo "$$p"; \
-	done | \
-	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^3][0-9a-z]*$$,3,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
-	sed 'N;N;s,\n, ,g' | { \
-	list=; while read file base inst; do \
-	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
-	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man3dir)/$$inst'"; \
-	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man3dir)/$$inst" || exit $$?; \
-	  fi; \
-	done; \
-	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
-	while read files; do \
-	  test -z "$$files" || { \
-	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man3dir)'"; \
-	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man3dir)" || exit $$?; }; \
-	done; }
-
-uninstall-man3:
-	@$(NORMAL_UNINSTALL)
-	@list=''; test -n "$(man3dir)" || exit 0; \
-	files=`{ for i in $$list; do echo "$$i"; done; \
-	l2='$(man_MANS)'; for i in $$l2; do echo "$$i"; done | \
-	  sed -n '/\.3[a-z]*$$/p'; \
-	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^3][0-9a-z]*$$,3,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
-	dir='$(DESTDIR)$(man3dir)'; $(am__uninstall_files_from_dir)
-install-man5: $(man_MANS)
-	@$(NORMAL_INSTALL)
-	@list1=''; \
-	list2='$(man_MANS)'; \
-	test -n "$(man5dir)" \
-	  && test -n "`echo $$list1$$list2`" \
-	  || exit 0; \
-	echo " $(MKDIR_P) '$(DESTDIR)$(man5dir)'"; \
-	$(MKDIR_P) "$(DESTDIR)$(man5dir)" || exit 1; \
-	{ for i in $$list1; do echo "$$i"; done;  \
-	if test -n "$$list2"; then \
-	  for i in $$list2; do echo "$$i"; done \
-	    | sed -n '/\.5[a-z]*$$/p'; \
-	fi; \
-	} | while read p; do \
-	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; echo "$$p"; \
-	done | \
-	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^5][0-9a-z]*$$,5,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
-	sed 'N;N;s,\n, ,g' | { \
-	list=; while read file base inst; do \
-	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
-	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man5dir)/$$inst'"; \
-	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man5dir)/$$inst" || exit $$?; \
-	  fi; \
-	done; \
-	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
-	while read files; do \
-	  test -z "$$files" || { \
-	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man5dir)'"; \
-	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man5dir)" || exit $$?; }; \
-	done; }
-
-uninstall-man5:
-	@$(NORMAL_UNINSTALL)
-	@list=''; test -n "$(man5dir)" || exit 0; \
-	files=`{ for i in $$list; do echo "$$i"; done; \
-	l2='$(man_MANS)'; for i in $$l2; do echo "$$i"; done | \
-	  sed -n '/\.5[a-z]*$$/p'; \
-	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^5][0-9a-z]*$$,5,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
-	dir='$(DESTDIR)$(man5dir)'; $(am__uninstall_files_from_dir)
-install-man7: $(man_MANS)
-	@$(NORMAL_INSTALL)
-	@list1=''; \
-	list2='$(man_MANS)'; \
-	test -n "$(man7dir)" \
-	  && test -n "`echo $$list1$$list2`" \
-	  || exit 0; \
-	echo " $(MKDIR_P) '$(DESTDIR)$(man7dir)'"; \
-	$(MKDIR_P) "$(DESTDIR)$(man7dir)" || exit 1; \
-	{ for i in $$list1; do echo "$$i"; done;  \
-	if test -n "$$list2"; then \
-	  for i in $$list2; do echo "$$i"; done \
-	    | sed -n '/\.7[a-z]*$$/p'; \
-	fi; \
-	} | while read p; do \
-	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; echo "$$p"; \
-	done | \
-	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^7][0-9a-z]*$$,7,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
-	sed 'N;N;s,\n, ,g' | { \
-	list=; while read file base inst; do \
-	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
-	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man7dir)/$$inst'"; \
-	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man7dir)/$$inst" || exit $$?; \
-	  fi; \
-	done; \
-	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
-	while read files; do \
-	  test -z "$$files" || { \
-	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man7dir)'"; \
-	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man7dir)" || exit $$?; }; \
-	done; }
-
-uninstall-man7:
-	@$(NORMAL_UNINSTALL)
-	@list=''; test -n "$(man7dir)" || exit 0; \
-	files=`{ for i in $$list; do echo "$$i"; done; \
-	l2='$(man_MANS)'; for i in $$l2; do echo "$$i"; done | \
-	  sed -n '/\.7[a-z]*$$/p'; \
-	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^7][0-9a-z]*$$,7,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
-	dir='$(DESTDIR)$(man7dir)'; $(am__uninstall_files_from_dir)
-install-man8: $(man_MANS)
-	@$(NORMAL_INSTALL)
-	@list1=''; \
-	list2='$(man_MANS)'; \
-	test -n "$(man8dir)" \
-	  && test -n "`echo $$list1$$list2`" \
-	  || exit 0; \
-	echo " $(MKDIR_P) '$(DESTDIR)$(man8dir)'"; \
-	$(MKDIR_P) "$(DESTDIR)$(man8dir)" || exit 1; \
-	{ for i in $$list1; do echo "$$i"; done;  \
-	if test -n "$$list2"; then \
-	  for i in $$list2; do echo "$$i"; done \
-	    | sed -n '/\.8[a-z]*$$/p'; \
-	fi; \
-	} | while read p; do \
-	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; echo "$$p"; \
-	done | \
-	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^8][0-9a-z]*$$,8,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
-	sed 'N;N;s,\n, ,g' | { \
-	list=; while read file base inst; do \
-	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
-	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man8dir)/$$inst'"; \
-	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man8dir)/$$inst" || exit $$?; \
-	  fi; \
-	done; \
-	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
-	while read files; do \
-	  test -z "$$files" || { \
-	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man8dir)'"; \
-	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man8dir)" || exit $$?; }; \
-	done; }
-
-uninstall-man8:
-	@$(NORMAL_UNINSTALL)
-	@list=''; test -n "$(man8dir)" || exit 0; \
-	files=`{ for i in $$list; do echo "$$i"; done; \
-	l2='$(man_MANS)'; for i in $$l2; do echo "$$i"; done | \
-	  sed -n '/\.8[a-z]*$$/p'; \
-	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^8][0-9a-z]*$$,8,;x' \
-	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
-	dir='$(DESTDIR)$(man8dir)'; $(am__uninstall_files_from_dir)
 tags TAGS:
 
 ctags CTAGS:
@@ -591,16 +355,12 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
+	$(MAKE) $(AM_MAKEFLAGS) $(dist_check_SCRIPTS)
 check: check-am
-all-am: Makefile $(MANS)
+all-am: Makefile
 installdirs:
-	for dir in "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
-install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
-uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
@@ -647,7 +407,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-man
+install-data-am:
 
 install-dvi: install-dvi-am
 
@@ -663,7 +423,7 @@ install-info: install-info-am
 
 install-info-am:
 
-install-man: install-man3 install-man5 install-man7 install-man8
+install-man:
 
 install-pdf: install-pdf-am
 
@@ -691,12 +451,9 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-man
+uninstall-am:
 
-uninstall-man: uninstall-man3 uninstall-man5 uninstall-man7 \
-	uninstall-man8
-
-.MAKE: install-am install-strip
+.MAKE: check-am install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	cscopelist-am ctags-am distclean distclean-generic \
@@ -704,14 +461,25 @@ uninstall-man: uninstall-man3 uninstall-man5 uninstall-man7 \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
-	install-man3 install-man5 install-man7 install-man8 \
 	install-pdf install-pdf-am install-ps install-ps-am \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags-am uninstall uninstall-am uninstall-man uninstall-man3 \
-	uninstall-man5 uninstall-man7 uninstall-man8
+	tags-am uninstall uninstall-am
 
+
+install:
+	[ -d $(DESTDIR)${prefix}/$(GODIR) ] || mkdir -p $(DESTDIR)${prefix}/$(GODIR)
+	install -m 644 ${top_srcdir}/bindings/golang/audit.go $(DESTDIR)${prefix}/$(GODIR)
+
+uninstall:
+	@rm -f $(DESTDIR)${prefix}/$(GODIR)/*
+
+check:
+	@mkdir audit
+	@cp ${top_srcdir}/bindings/golang/audit.go audit
+	@cp ${top_srcdir}/lib/libaudit.h audit
+	@rm -rf audit 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

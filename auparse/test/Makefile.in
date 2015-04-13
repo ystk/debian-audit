@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # Makefile.am -- 
-# Copyright 2006-08 Red Hat Inc., Durham, North Carolina.
+# Copyright 2006-08,2014 Red Hat Inc., Durham, North Carolina.
 # All Rights Reserved.
 #
 # This library is free software; you can redistribute it and/or
@@ -117,7 +117,8 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_VPATH_FILES =
 am_auparse_test_OBJECTS = auparse_test.$(OBJEXT)
 auparse_test_OBJECTS = $(am_auparse_test_OBJECTS)
-auparse_test_DEPENDENCIES =
+auparse_test_DEPENDENCIES = ${top_builddir}/auparse/libauparse.la \
+	${top_builddir}/lib/libaudit.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -212,6 +213,8 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
+GOLANG = @GOLANG@
+GOROOT = @GOROOT@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -282,6 +285,7 @@ datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+gobind_dir = @gobind_dir@
 gss_libs = @gss_libs@
 host = @host@
 host_alias = @host_alias@
@@ -305,6 +309,7 @@ pkgpythondir = @pkgpythondir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+pybind_dir = @pybind_dir@
 pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
@@ -326,8 +331,8 @@ EXTRA_DIST = auparse_test.ref auparse_test.ref.py test.log test2.log
 INCLUDES = -I${top_srcdir}/auparse -I${top_srcdir}/lib
 auparse_test_SOURCES = auparse_test.c
 auparse_test_LDFLAGS = -static
-auparse_test_LDADD = -L${top_builddir}/auparse/.libs \
-	-L${top_builddir}/lib/.libs -lauparse -laudit
+auparse_test_LDADD = ${top_builddir}/auparse/libauparse.la \
+	${top_builddir}/lib/libaudit.la
 
 drop_srcdir = sed 's,$(srcdir)/test,test,'
 all: all-am

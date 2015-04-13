@@ -44,6 +44,7 @@ libaudit.so.1 libaudit1 #MINVER#
  audit_number_to_errmsg@Base 1:2.2.1
  audit_open@Base 1:2.2.1
  audit_operator_to_symbol@Base 1:2.2.1
+ audit_request_features@Base 1:2.4
  audit_request_rules_list_data@Base 1:2.2.1
  audit_request_signal_info@Base 1:2.2.1
  audit_request_status@Base 1:2.2.1
@@ -57,6 +58,8 @@ libaudit.so.1 libaudit1 #MINVER#
  audit_set_backlog_limit@Base 1:2.2.1
  audit_set_enabled@Base 1:2.2.1
  audit_set_failure@Base 1:2.2.1
+ audit_set_feature@Base 1:2.4
+ audit_set_loginuid_immutable@Base 1:2.4
  audit_set_pid@Base 1:2.2.1
  audit_set_rate_limit@Base 1:2.2.1
  audit_setloginuid@Base 1:2.2.1

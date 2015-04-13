@@ -6,6 +6,10 @@
 /* Define to 1 to use the syscall interface for clock_gettime */
 #undef HAVE_CLOCK_SYSCALL
 
+/* Define to 1 if you have the declaration of `AUDIT_FEATURE_VERSION', and to
+   0 if you don't. */
+#undef HAVE_DECL_AUDIT_FEATURE_VERSION
+
 /* Define to 1 if you have the declaration of `MS_DIRSYNC', and to 0 if you
    don't. */
 #undef HAVE_DECL_MS_DIRSYNC

@@ -43,6 +43,8 @@ int no_config = 0;
 
 /* These are for compatibility with parser */
 unsigned int event_id = -1;
+uid_t event_uid = -1, event_loginuid = -2, event_euid = -1;
+gid_t event_gid = -1, event_egid = -1;
 slist *event_node_list = NULL;
 const char *event_key = NULL;
 const char *event_filename = NULL;
@@ -54,9 +56,10 @@ const char *event_subject = NULL;
 const char *event_object = NULL;
 const char *event_uuid = NULL;
 const char *event_vmname = NULL;
-int event_exit = 0, event_exit_is_set = 0;
+long long event_exit = 0;
+int event_exit_is_set = 0;
 int event_ppid = -1, event_session_id = -2;
-int event_debug = 0;
+int event_debug = 0, event_machine = -1;
 
 /* These are used by aureport */
 const char *dummy = "dummy";
@@ -275,25 +278,32 @@ int check_params(int count, char *vars[])
 				event_exe = dummy;
 				event_hostname = dummy;
 				event_terminal = dummy;
+				event_uid = 1;
 			}
 			break;
 		case R_MAC:
 			if (set_report(RPT_MAC))
 				retval = -1;
-			else 
+			else { 
 				set_detail(D_DETAILED);
+				event_loginuid = 1;
+			}
 			break;
 		case R_CONFIGS:
 			if (set_report(RPT_CONFIG))
 				retval = -1;
-			else 
+			else { 
 				set_detail(D_DETAILED);
+				event_loginuid = 1;
+			}
 			break;
 		case R_CRYPTO:
 			if (set_report(RPT_CRYPTO))
 				retval = -1;
-			else 
+			else { 
 				set_detail(D_DETAILED);
+				event_loginuid = 1;
+			}
 			break;
 		case R_LOGINS:
 			if (set_report(RPT_LOGIN))
@@ -303,6 +313,7 @@ int check_params(int count, char *vars[])
 				event_exe = dummy;
 				event_hostname = dummy;
 				event_terminal = dummy;
+				event_uid = 1;
 			}
 			break;
 		case R_ACCT_MODS:
@@ -313,15 +324,17 @@ int check_params(int count, char *vars[])
 				event_exe = dummy;
 				event_hostname = dummy;
 				event_terminal = dummy;
+				event_loginuid = 1;
 			}
 			break;
 		case R_EVENTS:
 			if (set_report(RPT_EVENT))
 				retval = -1;
 			else {
-//				if (!optarg)
+//				if (!optarg) {
 					set_detail(D_DETAILED);
-//				else {
+					event_loginuid = 1;
+//				} else {
 //					UNIMPLEMENTED;
 //					set_detail(D_SPECIFIC);
 //					if (isdigit(optarg[0])) {
@@ -351,6 +364,7 @@ int check_params(int count, char *vars[])
 					set_detail(D_DETAILED);
 					event_filename = dummy;
 					event_exe = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -363,6 +377,7 @@ int check_params(int count, char *vars[])
 				if (!optarg) {
 					set_detail(D_DETAILED);
 					event_hostname = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -384,6 +399,7 @@ int check_params(int count, char *vars[])
 				if (!optarg) {
 					set_detail(D_DETAILED);
 					event_exe = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -396,6 +412,7 @@ int check_params(int count, char *vars[])
 				if (!optarg) {
 					set_detail(D_DETAILED);
 					event_comm = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -410,6 +427,7 @@ int check_params(int count, char *vars[])
 					event_terminal = dummy;
 					event_hostname = dummy;
 					event_exe = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -424,6 +442,8 @@ int check_params(int count, char *vars[])
 					event_terminal = dummy;
 					event_hostname = dummy;
 					event_exe = dummy;
+					event_uid = 1;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -438,6 +458,7 @@ int check_params(int count, char *vars[])
 					event_terminal = dummy;
 					event_hostname = dummy;
 					event_exe = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -453,6 +474,7 @@ int check_params(int count, char *vars[])
 					event_hostname = dummy;
 					event_exe = dummy;
 					event_comm = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -477,6 +499,7 @@ int check_params(int count, char *vars[])
 					set_detail(D_DETAILED);
 					event_exe = dummy;
 					event_key = dummy;
+					event_loginuid = 1;
 				} else {
 					UNIMPLEMENTED;
 				}
@@ -486,10 +509,11 @@ int check_params(int count, char *vars[])
 			if (set_report(RPT_TTY))
 				retval = -1;
 			else {
+				set_detail(D_DETAILED);
 				event_session_id = 1;
+				event_loginuid = 1;
 				event_terminal = dummy;
 				event_comm = dummy;
-				set_detail(D_DETAILED);
 			}
 			break;
 		case R_TIME_END:
@@ -650,6 +674,7 @@ int check_params(int count, char *vars[])
 				event_terminal = dummy;
 				event_exe = dummy;
 				event_key = dummy;
+				event_loginuid = 1;
 			}
 		}
 	} else

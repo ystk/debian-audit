@@ -29,7 +29,7 @@ define([AC_INIT_NOTICE],
 ])
 
 AC_REVISION($Revision: 1.3 $)dnl
-AC_INIT(audit,2.3.7)
+AC_INIT(audit,2.4)
 AC_PREREQ(2.12)dnl
 AM_CONFIG_HEADER(config.h)
 
@@ -63,6 +63,7 @@ AC_CHECK_SIZEOF([unsigned int])
 AC_CHECK_SIZEOF([unsigned long])
 AM_PROG_CC_C_O
 AC_CHECK_DECLS([MS_DIRSYNC], [], [], [[#include <sys/mount.h>]])
+AC_CHECK_DECLS([AUDIT_FEATURE_VERSION], [], [], [[#include <linux/audit.h>]])
 
 ALLWARNS=""
 ALLDEBUG="-g"
@@ -92,6 +93,8 @@ AC_MSG_RESULT(testing)
 AM_PATH_PYTHON
 if test -f /usr/include/python${am_cv_python_version}/Python.h ; then
 	python_found="yes"
+	pybind_dir="python"
+	AC_SUBST(pybind_dir)
 	AC_MSG_NOTICE(Python bindings will be built)
 else
 	python_found="no"
@@ -103,6 +106,36 @@ else
 fi
 fi
 AM_CONDITIONAL(HAVE_PYTHON, test ${python_found} = "yes")
+
+AC_MSG_CHECKING(whether to create Go language bindings)
+AC_ARG_WITH(golang,
+AS_HELP_STRING([--with-golang],[enable building golang bindings]),
+use_golang=$withval,
+use_golang=auto)
+if test x$use_golang = xno ; then
+    golang_found="no"
+    AC_MSG_RESULT(no)
+else
+    AC_MSG_RESULT(testing)
+    AC_CHECK_PROG([GOLANG],[go],[go],[no])
+    AS_IF([test "x$GOLANG" != "xno"],[
+	AC_MSG_NOTICE(Go bindings will be built)
+        golang_found="yes"
+
+        # Substitute some golang environment.
+        GOROOT=`$GOLANG env GOROOT`
+        AC_SUBST([GOROOT])
+        gobind_dir="golang"
+        AC_SUBST([gobind_dir])
+    ], [
+	if test x$use_golang = xyes ; then
+		AC_MSG_ERROR([Go language explicitly requested and program not found])
+	else
+		AC_MSG_WARN("Go not found - go bindings will not be made")
+	fi
+    ])
+fi
+AM_CONDITIONAL(HAVE_GOLANG, test ${golang_found} = "yes")
 
 #auditd listener
 AC_MSG_CHECKING(whether to include auditd network listener support)
@@ -291,7 +324,7 @@ AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBPRELUDE_CFLAGS)
 AC_SUBST(LIBPRELUDE_LDFLAGS)
 
-AC_OUTPUT(Makefile lib/Makefile lib/test/Makefile auparse/Makefile auparse/test/Makefile src/Makefile src/mt/Makefile src/libev/Makefile src/test/Makefile swig/Makefile docs/Makefile init.d/Makefile audisp/Makefile audisp/plugins/Makefile audisp/plugins/builtins/Makefile audisp/plugins/prelude/Makefile audisp/plugins/remote/Makefile audisp/plugins/zos-remote/Makefile bindings/Makefile bindings/python/Makefile tools/Makefile tools/aulast/Makefile tools/aulastlog/Makefile tools/ausyscall/Makefile tools/auvirt/Makefile)
+AC_OUTPUT(Makefile lib/Makefile lib/audit.pc lib/test/Makefile auparse/Makefile auparse/test/Makefile src/Makefile src/mt/Makefile src/libev/Makefile src/test/Makefile swig/Makefile docs/Makefile init.d/Makefile audisp/Makefile audisp/plugins/Makefile audisp/plugins/builtins/Makefile audisp/plugins/prelude/Makefile audisp/plugins/remote/Makefile audisp/plugins/zos-remote/Makefile bindings/Makefile bindings/python/Makefile bindings/golang/Makefile tools/Makefile tools/aulast/Makefile tools/aulastlog/Makefile tools/ausyscall/Makefile tools/auvirt/Makefile)
 
 echo .
 echo "

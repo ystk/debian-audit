@@ -40,6 +40,7 @@ libauparse.so.0 libauparse0 #MINVER#
  ausearch_add_item@Base 1:2.2.1
  ausearch_add_regex@Base 1:2.2.1
  ausearch_add_timestamp_item@Base 1:2.2.1
+ ausearch_add_timestamp_item_ex@Base 1:2.4
  ausearch_clear@Base 1:2.2.1
  ausearch_next_event@Base 1:2.2.1
  ausearch_set_stop@Base 1:2.2.1

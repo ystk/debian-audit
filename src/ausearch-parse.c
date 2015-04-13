@@ -186,9 +186,10 @@ int extract_search_items(llist *l)
 static int parse_syscall(lnode *n, search_items *s)
 {
 	char *ptr, *str, *term;
+	extern int event_machine;
 
 	term = n->message;
-	if (report_format > RPT_DEFAULT) {
+	if (report_format > RPT_DEFAULT || event_machine != -1) {
 		// get arch
 		str = strstr(term, "arch=");
 		if (str == NULL) 
@@ -245,7 +246,7 @@ static int parse_syscall(lnode *n, search_items *s)
 			return 9;
 		*term = 0;
 		errno = 0;
-		s->exit = strtoul(ptr, NULL, 0);
+		s->exit = strtoll(ptr, NULL, 0);
 		if (errno)
 			return 10;
 		s->exit_is_set = 1;
@@ -313,80 +314,93 @@ static int parse_syscall(lnode *n, search_items *s)
 			return 18;
 		*term = ' ';
 	}
-	// loginuid
-	str = strstr(term, "auid=");
-	if (str == NULL) {
-		str = strstr(term, "loginuid=");
+	// optionally get loginuid
+	if (event_loginuid != -2) {
+		str = strstr(term, "auid=");
+		if (str == NULL) {
+			str = strstr(term, "loginuid=");
+			if (str == NULL)
+				return 19;
+			ptr = str + 9;
+		} else
+			ptr = str + 5;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 20;
+		*term = 0;
+		errno = 0;
+		s->loginuid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 21;
+		*term = ' ';
+	}
+	// optionally get uid
+	if (event_uid != -1) {
+		str = strstr(term, "uid=");
 		if (str == NULL)
-			return 19;
-		ptr = str + 9;
-	} else
-		ptr = str + 5;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 20;
-	*term = 0;
-	errno = 0;
-	s->loginuid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 21;
-	// uid
-	*term = ' ';
-	str = strstr(term, "uid=");
-	if (str == NULL)
-		return 22;
-	ptr = str + 4;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 23;
-	*term = 0;
-	errno = 0;
-	s->uid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 24;
-	// gid
-	*term = ' ';
-	str = strstr(term, "gid=");
-	if (str == NULL)
-		return 25;
-	ptr = str + 4;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 26;
-	*term = 0;
-	errno = 0;
-	s->gid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 27;
+			return 22;
+		ptr = str + 4;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 23;
+		*term = 0;
+		errno = 0;
+		s->uid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 24;
+		*term = ' ';
+	}
+
+	// optionally get gid
+	if (event_gid != -1) {
+		str = strstr(term, "gid=");
+		if (str == NULL)
+			return 25;
+		ptr = str + 4;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 26;
+		*term = 0;
+		errno = 0;
+		s->gid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 27;
+		*term = ' ';
+	}
+
 	// euid
-	*term = ' ';
-	str = strstr(term, "euid=");
-	if (str == NULL)
-		return 28;
-	ptr = str + 5;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 29;
-	*term = 0;
-	errno = 0;
-	s->euid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 30;
+	if (event_euid != -1) {
+		str = strstr(term, "euid=");
+		if (str == NULL)
+			return 28;
+		ptr = str + 5;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 29;
+		*term = 0;
+		errno = 0;
+		s->euid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 30;
+		*term = ' ';
+	}
+
 	// egid
-	*term = ' ';
-	str = strstr(term, "egid=");
-	if (str == NULL)
-		return 31;
-	ptr = str + 5;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 32;
-	*term = 0;
-	errno = 0;
-	s->egid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 33;
-	*term = ' ';
+	if (event_egid != -1) {
+		str = strstr(term, "egid=");
+		if (str == NULL)
+			return 31;
+		ptr = str + 5;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 32;
+		*term = 0;
+		errno = 0;
+		s->egid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 33;
+		*term = ' ';
+	}
 
 	if (event_terminal) {
 		// dont do this search unless needed
@@ -740,39 +754,43 @@ static int parse_user(const lnode *n, search_items *s)
 			return 3;
 		*term = ' ';
 	}
-	// get uid
-	str = strstr(term, "uid=");
-	if (str == NULL)
-		return 4;
-	ptr = str + 4;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 5;
-	*term = 0;
-	errno = 0;
-	s->uid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 6;
-	*term = ' ';
-	// get loginuid
-	*term = ' ';
-	str = strstr(term, "auid=");
-	if (str == NULL) { // Try the older one
-		str = strstr(term, "loginuid=");
+	// optionally get uid
+	if (event_uid != -1) {
+		str = strstr(term, "uid=");
 		if (str == NULL)
-			return 7;
-		ptr = str + 9;
-	} else
-		ptr = str + 5;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 8;
-	*term = 0;
-	errno = 0;
-	s->loginuid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 9;
-	*term = ' ';
+			return 4;
+		ptr = str + 4;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 5;
+		*term = 0;
+		errno = 0;
+		s->uid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 6;
+		*term = ' ';
+	}
+	// optionally get loginuid
+	if (event_loginuid != -2) {
+		*term = ' ';
+		str = strstr(term, "auid=");
+		if (str == NULL) { // Try the older one
+			str = strstr(term, "loginuid=");
+			if (str == NULL)
+				return 7;
+			ptr = str + 9;
+		} else
+			ptr = str + 5;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 8;
+		*term = 0;
+		errno = 0;
+		s->loginuid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 9;
+		*term = ' ';
+	}
 	// ses
 	if (event_session_id != -2 ) {
 		str = strstr(term, "ses=");
@@ -878,28 +896,31 @@ static int parse_user(const lnode *n, search_items *s)
 				return 30;
 		}
 	}
-	// get uid - some records the second uid is what we want.
+	// optionally get uid - some records the second uid is what we want.
 	// USER_LOGIN for example.
-	str = strstr(term, "uid=");
-	if (str) {
-		if (*(str - 1) == 'a' || *(str - 1) == 's' || *(str - 1) == 'u')
-			goto skip;
-		if (!(*(str - 1) == '\'' || *(str - 1) == ' '))
-			return 25;
-		ptr = str + 4;
-		term = ptr;
-		while (isdigit(*term))
-			term++;
-		if (term == ptr)
-			return 14;
+	if (event_uid != -1) {
+		str = strstr(term, "uid=");
+		if (str) {
+			if (*(str - 1) == 'a' || *(str - 1) == 's' ||
+					*(str - 1) == 'u')
+				goto skip;
+			if (!(*(str - 1) == '\'' || *(str - 1) == ' '))
+				return 25;
+			ptr = str + 4;
+			term = ptr;
+			while (isdigit(*term))
+				term++;
+			if (term == ptr)
+				return 14;
 
-		saved = *term;
-		*term = 0;
-		errno = 0;
-		s->uid = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 15;
-		*term = saved;
+			saved = *term;
+			*term = 0;
+			errno = 0;
+			s->uid = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 15;
+			*term = saved;
+		}
 	}
 skip:
 	mptr = term + 1;
@@ -1135,20 +1156,22 @@ static int parse_login(const lnode *n, search_items *s)
 			return 3;
 		*term = ' ';
 	}
-	// get uid
-	str = strstr(term, "uid=");
-	if (str == NULL)
-		return 4;
-	ptr = str + 4;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 5;
-	*term = 0;
-	errno = 0;
-	s->uid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 6;
-	*term = ' ';
+	// optionally get uid
+	if (event_uid != -1) {
+		str = strstr(term, "uid=");
+		if (str == NULL)
+			return 4;
+		ptr = str + 4;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 5;
+		*term = 0;
+		errno = 0;
+		s->uid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 6;
+		*term = ' ';
+	}
 	// optionally get subj
 	if (event_subject) {
 		str = strstr(term, "subj=");
@@ -1170,34 +1193,35 @@ static int parse_login(const lnode *n, search_items *s)
 			*term = ' ';
 		}
 	}
-	// get loginuid
-	str = strstr(term, "new auid=");
-	if (str == NULL) {
-		// 3.14 kernel changed it to the next line
-		str = strstr(term, " auid=");
+	// optionally get loginuid
+	if (event_loginuid != -2) {
+		str = strstr(term, "new auid=");
 		if (str == NULL) {
-			str = strstr(term, "new loginuid=");
-			if (str == NULL)
-				return 7;
-			ptr = str + 13;
-		}
-		else
-			ptr = str + 6;
-	} else
-		ptr = str + 9;
-	term = strchr(ptr, ' ');
-	if (term)
-		*term = 0;
-	errno = 0;
-	s->loginuid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 8;
-	if (term)
-		*term = ' ';
+			// 3.14 kernel changed it to the next line
+			str = strstr(term, " auid=");
+			if (str == NULL) {
+				str = strstr(term, "new loginuid=");
+				if (str == NULL)
+					return 7;
+				ptr = str + 13;
+			} else
+				ptr = str + 6;
+		} else
+			ptr = str + 9;
+		term = strchr(ptr, ' ');
+		if (term)
+			*term = 0;
+		errno = 0;
+		s->loginuid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 8;
+		if (term)
+			*term = ' ';
+	}
 
 	// success
 	if (event_success != S_UNSET) {
-		str = strstr(ptr, "res=");
+		str = strstr(term, "res=");
 		if (str != NULL) {
 			ptr = str + 4;
 			term = strchr(ptr, ' ');
@@ -1247,22 +1271,25 @@ static int parse_daemon1(const lnode *n, search_items *s)
 	mptr = strchr(n->message, ')');
 	if (mptr == NULL)
 		mptr = n->message;
+	term = mptr;
 
-	// auid
-	str = strstr(mptr, "auid=");
-	if (str == NULL)
-		return 1;
-	ptr = str + 5;
-	term = strchr(ptr, ' ');
-	if (term == NULL)
-		return 2;
-	saved = *term;
-	*term = 0;
-	errno = 0;
-	s->loginuid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 3;
-	*term = saved;
+	// optionally get auid
+	if (event_loginuid != -2 ) {
+		str = strstr(mptr, "auid=");
+		if (str == NULL)
+			return 1;
+		ptr = str + 5;
+		term = strchr(ptr, ' ');
+		if (term == NULL)
+			return 2;
+		saved = *term;
+		*term = 0;
+		errno = 0;
+		s->loginuid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 3;
+		*term = saved;
+	}
 
 	// pid
 	if (event_pid != -1) {
@@ -1481,34 +1508,38 @@ static int parse_integrity(const lnode *n, search_items *s)
 		*term = ' ';
 	}
 
-	// get uid
-	str = strstr(term, " uid=");
-	if (str) {
-		ptr = str + 4;
-		term = strchr(ptr, ' ');
-		if (term == NULL)
-			return 3;
-		*term = 0;
-		errno = 0;
-		s->uid = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 4;
-		*term = ' ';
+	// optionally get uid
+	if (event_uid != -1) {
+		str = strstr(term, " uid=");
+		if (str) {
+			ptr = str + 4;
+			term = strchr(ptr, ' ');
+			if (term == NULL)
+				return 3;
+			*term = 0;
+			errno = 0;
+			s->uid = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 4;
+			*term = ' ';
+		}
 	}
 
-	// get loginuid
-	str = strstr(n->message, "auid=");
-	if (str) {
-		ptr = str + 5;
-		term = strchr(ptr, ' ');
-		if (term == NULL)
-			return 5;
-		*term = 0;
-		errno = 0;
-		s->loginuid = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 6;
-		*term = ' ';
+	// optionally get loginuid
+	if (event_loginuid != -2) {
+		str = strstr(n->message, "auid=");
+		if (str) {
+			ptr = str + 5;
+			term = strchr(ptr, ' ');
+			if (term == NULL)
+				return 5;
+			*term = 0;
+			errno = 0;
+			s->loginuid = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 6;
+			*term = ' ';
+		}
 	}
 
 	// ses
@@ -1549,41 +1580,47 @@ static int parse_integrity(const lnode *n, search_items *s)
 		}
 	}
 
-	str = strstr(term, "comm=");
-	if (str) {
-		str += 5;
-		if (*str == '"') {
-			str++;
-			term = strchr(str, '"');
-			if (term == NULL)
-				return 7;
-			*term = 0;
-			s->comm = strdup(str);
-			*term = '"';
-		} else
-			s->comm = unescape(str);
+	if (event_comm) {
+		str = strstr(term, "comm=");
+		if (str) {
+			str += 5;
+			if (*str == '"') {
+				str++;
+				term = strchr(str, '"');
+				if (term == NULL)
+					return 7;
+				*term = 0;
+				s->comm = strdup(str);
+				*term = '"';
+			} else
+				s->comm = unescape(str);
+		}
 	}
 
-	str = strstr(term, " name=");
-	if (str) {
-		str += 6;
-		if (common_path_parser(s, str))
-			return 8;
+	if (event_filename) {
+		str = strstr(term, " name=");
+		if (str) {
+			str += 6;
+			if (common_path_parser(s, str))
+				return 8;
+		}
 	}
 
 	// and results (usually last)
-	str = strstr(term, "res=");
-	if (str != NULL) {
-		ptr = str + 4;
-		term = strchr(ptr, ' ');
-		if (term)
-			*term = 0;
-		errno = 0;
-		s->success = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 9;
-		if (term)
-			*term = ' ';
+	if (event_success != S_UNSET) {
+		str = strstr(term, "res=");
+		if (str != NULL) {
+			ptr = str + 4;
+			term = strchr(ptr, ' ');
+			if (term)
+				*term = 0;
+			errno = 0;
+			s->success = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 9;
+			if (term)
+				*term = ' ';
+		}
 	}
 
 	return 0;
@@ -1762,69 +1799,77 @@ err:
 
 static int parse_kernel_anom(const lnode *n, search_items *s)
 {
-	char *str, *ptr, *term;
+	char *str, *ptr, *term = n->message;
 
-	// get loginuid
-	str = strstr(n->message, "auid=");
-	if (str == NULL)
-		return 1;
-	ptr = str + 5;
-	term = strchr(ptr, ' ');
-	if (term)
-		*term = 0;
-	errno = 0;
-	s->loginuid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 2;
-	if (term)
-		*term = ' ';
-	else
-		term = n->message;
-
-	// get uid
-	str = strstr(term, "uid="); // if promiscuous, we start over
-	if (str) {
-		ptr = str + 4;
-		term = strchr(ptr, ' ');
-		if (term == NULL)
-			return 3;
-		*term = 0;
-		errno = 0;
-		s->uid = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 4;
-		*term = ' ';
-	}
-
-	// get gid
-	str = strstr(term, "gid=");
-	if (str) {
-		ptr = str + 4;
-		term = strchr(ptr, ' ');
-		if (term == NULL)
-			return 5;
-		*term = 0;
-		errno = 0;
-		s->gid = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 6;
-		*term = ' ';
-	}
-
-	str = strstr(term, "ses=");
-	if (str) {
-		ptr = str + 4;
+	// optionally get loginuid
+	if (event_loginuid != -2) {
+		str = strstr(term, "auid=");
+		if (str == NULL)
+			return 1;
+		ptr = str + 5;
 		term = strchr(ptr, ' ');
 		if (term)
 			*term = 0;
 		errno = 0;
-		s->session_id = strtoul(ptr, NULL, 10);
+		s->loginuid = strtoul(ptr, NULL, 10);
 		if (errno)
-			return 7;
+			return 2;
 		if (term)
 			*term = ' ';
 		else
 			term = ptr;
+	}
+
+	// optionally get uid
+	if (event_uid != -1) {
+		str = strstr(term, "uid="); // if promiscuous, we start over
+		if (str) {
+			ptr = str + 4;
+			term = strchr(ptr, ' ');
+			if (term == NULL)
+				return 3;
+			*term = 0;
+			errno = 0;
+			s->uid = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 4;
+			*term = ' ';
+		}
+	}
+
+	// optionally get gid
+	if (event_gid != -1) {
+		str = strstr(term, "gid=");
+		if (str) {
+			ptr = str + 4;
+			term = strchr(ptr, ' ');
+			if (term == NULL)
+				return 5;
+			*term = 0;
+			errno = 0;
+			s->gid = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 6;
+			*term = ' ';
+		}
+	}
+
+	if (event_session_id != -2) {
+		str = strstr(term, "ses=");
+		if (str) {
+			ptr = str + 4;
+			term = strchr(ptr, ' ');
+			if (term)
+				*term = 0;
+			errno = 0;
+			s->session_id = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 7;
+			if (term)
+				*term = ' ';
+			else
+				term = ptr;
+		}
 	}
 
 	if (event_subject) {
@@ -1921,25 +1966,27 @@ static int parse_kernel_anom(const lnode *n, search_items *s)
 // of interest.
 static int parse_simple_message(const lnode *n, search_items *s)
 {
-	char *str, *ptr, *term  = n->message;
+	char *str, *ptr, *term = n->message;
 
-	// get loginuid - note some kernels don't have auid for CONFIG_CHANGE
-	str = strstr(term, "auid=");
-	if (str == NULL && n->type != AUDIT_CONFIG_CHANGE)
-		return 1;
-	if (str) {
-		ptr = str + 5;
-		term = strchr(ptr, ' ');
-		if (term)
-			*term = 0;
-		errno = 0;
-		s->loginuid = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 2;
-		if (term)
-			*term = ' ';
-		else
-			term = ptr;
+	// optionally get loginuid - old kernels skip auid for CONFIG_CHANGE
+	if (event_loginuid != -2) {
+		str = strstr(term, "auid=");
+		if (str == NULL && n->type != AUDIT_CONFIG_CHANGE)
+			return 1;
+		if (str) {
+			ptr = str + 5;
+			term = strchr(ptr, ' ');
+			if (term)
+				*term = 0;
+			errno = 0;
+			s->loginuid = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 2;
+			if (term)
+				*term = ' ';
+			else
+				term = ptr;
+		}
 	}
 
 	// ses
@@ -2081,37 +2128,41 @@ static int parse_tty(const lnode *n, search_items *s)
 		}
 	}
 
-	// get uid
-	str = strstr(term, " uid="); // if promiscuous, we start over
-	if (str) {
-		ptr = str + 4;
-		term = strchr(ptr, ' ');
-		if (term == NULL)
-			return 3;
-		*term = 0;
-		errno = 0;
-		s->uid = strtoul(ptr, NULL, 10);
-		if (errno)
-			return 4;
-		*term = ' ';
+	// optionally get uid
+	if (event_uid != -1) {
+		str = strstr(term, " uid="); // if promiscuous, we start over
+		if (str) {
+			ptr = str + 4;
+			term = strchr(ptr, ' ');
+			if (term == NULL)
+				return 3;
+			*term = 0;
+			errno = 0;
+			s->uid = strtoul(ptr, NULL, 10);
+			if (errno)
+				return 4;
+			*term = ' ';
+		}
 	}
 
-	// get loginuid
-	str = strstr(term, "auid=");
-	if (str == NULL)
-		return 5;
-	ptr = str + 5;
-	term = strchr(ptr, ' ');
-	if (term)
-		*term = 0;
-	errno = 0;
-	s->loginuid = strtoul(ptr, NULL, 10);
-	if (errno)
-		return 6;
-	if (term)
-		*term = ' ';
-	else
-		term = ptr;
+	// optionally get loginuid
+	if (event_loginuid != -2) {
+		str = strstr(term, "auid=");
+		if (str == NULL)
+			return 5;
+		ptr = str + 5;
+		term = strchr(ptr, ' ');
+		if (term)
+			*term = 0;
+		errno = 0;
+		s->loginuid = strtoul(ptr, NULL, 10);
+		if (errno)
+			return 6;
+		if (term)
+			*term = ' ';
+		else
+			term = ptr;
+	}
 
 	// ses
 	if (event_session_id != -2 ) {

@@ -9,14 +9,14 @@
 
 Summary: User space tools for 2.6 kernel auditing
 Name: audit
-Version: 2.3.7
+Version: 2.4
 Release: 1
 License: GPLv2+
 Group: System Environment/Daemons
 URL: http://people.redhat.com/sgrubb/audit/
 Source0: http://people.redhat.com/sgrubb/audit/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-BuildRequires: swig python-devel
+BuildRequires: swig python-devel golang
 BuildRequires: tcp_wrappers-devel krb5-devel libcap-ng-devel
 BuildRequires: kernel-headers >= 2.6.29
 Requires: %{name}-libs = %{version}-%{release}
@@ -94,7 +94,7 @@ behavior.
 %setup -q
 
 %build
-%configure --sbindir=/sbin --libdir=/%{_lib} --with-python=yes --with-libwrap --enable-gssapi-krb5=yes --with-libcap-ng=yes \
+%configure --sbindir=/sbin --libdir=/%{_lib} --with-python=yes --with-golang --with-libwrap --enable-gssapi-krb5=yes --with-libcap-ng=yes \
 %if %{WITH_SYSTEMD}
 	--enable-systemd
 %endif
@@ -136,6 +136,9 @@ rm -f $RPM_BUILD_ROOT/%{_libdir}/python?.?/site-packages/_auparse.a
 rm -f $RPM_BUILD_ROOT/%{_libdir}/python?.?/site-packages/_auparse.la
 rm -f $RPM_BUILD_ROOT/%{_libdir}/python?.?/site-packages/auparse.a
 rm -f $RPM_BUILD_ROOT/%{_libdir}/python?.?/site-packages/auparse.la
+
+# Move the pkgconfig file
+mv $RPM_BUILD_ROOT/%{_lib}/pkgconfig $RPM_BUILD_ROOT%{_libdir}
 
 # On platforms with 32 & 64 bit libs, we need to coordinate the timestamp
 touch -r ./audit.spec $RPM_BUILD_ROOT/etc/libaudit.conf
@@ -179,8 +182,8 @@ fi
 
 %files libs
 %defattr(-,root,root,-)
-%attr(755,root,root) /%{_lib}/libaudit.so.1*
-%attr(755,root,root) /%{_lib}/libauparse.*
+/%{_lib}/libaudit.so.1*
+/%{_lib}/libauparse.*
 %config(noreplace) %attr(640,root,root) /etc/libaudit.conf
 %{_mandir}/man5/libaudit.conf.5.gz
 
@@ -189,9 +192,12 @@ fi
 %doc contrib/skeleton.c contrib/plugin
 %{_libdir}/libaudit.so
 %{_libdir}/libauparse.so
+%dir %{_prefix}/lib/golang/src/pkg/redhat.com/audit
+%{_prefix}/lib/golang/src/pkg/redhat.com/audit/audit.go
 %{_includedir}/libaudit.h
 %{_includedir}/auparse.h
 %{_includedir}/auparse-defs.h
+%{_libdir}/pkgconfig/audit.pc
 %{_mandir}/man3/*
 
 %files libs-static
@@ -253,6 +259,7 @@ fi
 %attr(750,root,root) %dir /etc/audisp/plugins.d
 %config(noreplace) %attr(640,root,root) /etc/audit/auditd.conf
 %config(noreplace) %attr(640,root,root) /etc/audit/rules.d/audit.rules
+%ghost %config(noreplace) %attr(640,root,root) /etc/audit/audit.rules
 %config(noreplace) %attr(640,root,root) /etc/audisp/audispd.conf
 %config(noreplace) %attr(640,root,root) /etc/audisp/plugins.d/af_unix.conf
 %config(noreplace) %attr(640,root,root) /etc/audisp/plugins.d/syslog.conf
@@ -273,6 +280,6 @@ fi
 
 
 %changelog
-* Tue Jun 03 2014 Steve Grubb <sgrubb@redhat.com> 2.3.7-1
+* Sun Aug 24 2014 Steve Grubb <sgrubb@redhat.com> 2.4-1
 - New upstream release
 
