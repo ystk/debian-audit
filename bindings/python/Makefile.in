@@ -145,8 +145,8 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(pyexecdir)"
 LTLIBRARIES = $(pyexec_LTLIBRARIES)
-auparse_la_DEPENDENCIES = ../../auparse/libauparse.la \
-	../../lib/libaudit.la
+auparse_la_DEPENDENCIES = ${top_builddir}/auparse/libauparse.la \
+	${top_builddir}/lib/libaudit.la
 am_auparse_la_OBJECTS = auparse_la-auparse_python.lo
 auparse_la_OBJECTS = $(am_auparse_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -244,6 +244,8 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
+GOLANG = @GOLANG@
+GOROOT = @GOROOT@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -314,6 +316,7 @@ datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+gobind_dir = @gobind_dir@
 gss_libs = @gss_libs@
 host = @host@
 host_alias = @host_alias@
@@ -337,6 +340,7 @@ pkgpythondir = @pkgpythondir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+pybind_dir = @pybind_dir@
 pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
@@ -356,7 +360,7 @@ pyexec_LTLIBRARIES = auparse.la
 auparse_la_SOURCES = auparse_python.c
 auparse_la_CPPFLAGS = -I$(top_srcdir)/auparse $(AM_CPPFLAGS) -I/usr/include/python$(PYTHON_VERSION) -fno-strict-aliasing
 auparse_la_LDFLAGS = -module -avoid-version -Wl,-z,relro
-auparse_la_LIBADD = ../../auparse/libauparse.la ../../lib/libaudit.la
+auparse_la_LIBADD = ${top_builddir}/auparse/libauparse.la ${top_builddir}/lib/libaudit.la
 all: all-am
 
 .SUFFIXES:

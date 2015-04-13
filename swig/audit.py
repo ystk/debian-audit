@@ -89,7 +89,6 @@ AUDIT_TTY_GET = _audit.AUDIT_TTY_GET
 AUDIT_TTY_SET = _audit.AUDIT_TTY_SET
 AUDIT_SET_FEATURE = _audit.AUDIT_SET_FEATURE
 AUDIT_GET_FEATURE = _audit.AUDIT_GET_FEATURE
-AUDIT_FEATURE_CHANGE = _audit.AUDIT_FEATURE_CHANGE
 AUDIT_FIRST_USER_MSG = _audit.AUDIT_FIRST_USER_MSG
 AUDIT_USER_AVC = _audit.AUDIT_USER_AVC
 AUDIT_USER_TTY = _audit.AUDIT_USER_TTY
@@ -124,6 +123,8 @@ AUDIT_MMAP = _audit.AUDIT_MMAP
 AUDIT_NETFILTER_PKT = _audit.AUDIT_NETFILTER_PKT
 AUDIT_NETFILTER_CFG = _audit.AUDIT_NETFILTER_CFG
 AUDIT_SECCOMP = _audit.AUDIT_SECCOMP
+AUDIT_PROCTITLE = _audit.AUDIT_PROCTITLE
+AUDIT_FEATURE_CHANGE = _audit.AUDIT_FEATURE_CHANGE
 AUDIT_AVC = _audit.AUDIT_AVC
 AUDIT_SELINUX_ERR = _audit.AUDIT_SELINUX_ERR
 AUDIT_AVC_PATH = _audit.AUDIT_AVC_PATH
@@ -279,6 +280,8 @@ AUDIT_VERSION_LATEST = _audit.AUDIT_VERSION_LATEST
 AUDIT_FAIL_SILENT = _audit.AUDIT_FAIL_SILENT
 AUDIT_FAIL_PRINTK = _audit.AUDIT_FAIL_PRINTK
 AUDIT_FAIL_PANIC = _audit.AUDIT_FAIL_PANIC
+__AUDIT_ARCH_CONVENTION_MASK = _audit.__AUDIT_ARCH_CONVENTION_MASK
+__AUDIT_ARCH_CONVENTION_MIPS64_N32 = _audit.__AUDIT_ARCH_CONVENTION_MIPS64_N32
 __AUDIT_ARCH_64BIT = _audit.__AUDIT_ARCH_64BIT
 __AUDIT_ARCH_LE = _audit.__AUDIT_ARCH_LE
 AUDIT_PERM_EXEC = _audit.AUDIT_PERM_EXEC
@@ -627,7 +630,6 @@ AUDIT_VIRT_CONTROL = _audit.AUDIT_VIRT_CONTROL
 AUDIT_VIRT_RESOURCE = _audit.AUDIT_VIRT_RESOURCE
 AUDIT_VIRT_MACHINE_ID = _audit.AUDIT_VIRT_MACHINE_ID
 AUDIT_LAST_VIRT_MSG = _audit.AUDIT_LAST_VIRT_MSG
-AUDIT_PROCTITLE = _audit.AUDIT_PROCTITLE
 AUDIT_KEY_SEPARATOR = _audit.AUDIT_KEY_SEPARATOR
 AUDIT_FILTER_EXCLUDE = _audit.AUDIT_FILTER_EXCLUDE
 AUDIT_FILTER_MASK = _audit.AUDIT_FILTER_MASK
@@ -880,6 +882,10 @@ audit_is_enabled = _audit.audit_is_enabled
 def get_auditfail_action(*args):
   return _audit.get_auditfail_action(*args)
 get_auditfail_action = _audit.get_auditfail_action
+
+def audit_request_features(*args):
+  return _audit.audit_request_features(*args)
+audit_request_features = _audit.audit_request_features
 WAIT_NO = _audit.WAIT_NO
 WAIT_YES = _audit.WAIT_YES
 
@@ -902,6 +908,14 @@ audit_set_rate_limit = _audit.audit_set_rate_limit
 def audit_set_backlog_limit(*args):
   return _audit.audit_set_backlog_limit(*args)
 audit_set_backlog_limit = _audit.audit_set_backlog_limit
+
+def audit_set_feature(*args):
+  return _audit.audit_set_feature(*args)
+audit_set_feature = _audit.audit_set_feature
+
+def audit_set_loginuid_immutable(*args):
+  return _audit.audit_set_loginuid_immutable(*args)
+audit_set_loginuid_immutable = _audit.audit_set_loginuid_immutable
 
 def audit_request_rules_list_data(*args):
   return _audit.audit_request_rules_list_data(*args)

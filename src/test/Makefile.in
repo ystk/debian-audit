@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright 2008 Red Hat Inc., Durham, North Carolina.
+# Copyright 2008,2014 Red Hat Inc., Durham, North Carolina.
 # All Rights Reserved.
 #
 # This library is free software; you can redistribute it and/or
@@ -99,7 +99,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-check_PROGRAMS = ilist_test$(EXEEXT)
+check_PROGRAMS = ilist_test$(EXEEXT) slist_test$(EXEEXT)
 subdir = src/test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(top_srcdir)/test-driver
@@ -122,6 +122,9 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+slist_test_SOURCES = slist_test.c
+slist_test_OBJECTS = slist_test.$(OBJEXT)
+slist_test_DEPENDENCIES = ${top_builddir}/src/ausearch-string.o
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -156,8 +159,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = ilist_test.c
-DIST_SOURCES = ilist_test.c
+SOURCES = ilist_test.c slist_test.c
+DIST_SOURCES = ilist_test.c slist_test.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -414,6 +417,8 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
+GOLANG = @GOLANG@
+GOROOT = @GOROOT@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -484,6 +489,7 @@ datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+gobind_dir = @gobind_dir@
 gss_libs = @gss_libs@
 host = @host@
 host_alias = @host_alias@
@@ -507,6 +513,7 @@ pkgpythondir = @pkgpythondir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+pybind_dir = @pybind_dir@
 pyexecdir = @pyexecdir@
 pythondir = @pythondir@
 sbindir = @sbindir@
@@ -524,6 +531,7 @@ top_srcdir = @top_srcdir@
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/lib -I${top_srcdir}/src
 TESTS = $(check_PROGRAMS)
 ilist_test_LDADD = ${top_builddir}/src/ausearch-int.o
+slist_test_LDADD = ${top_builddir}/src/ausearch-string.o
 all: all-am
 
 .SUFFIXES:
@@ -572,6 +580,10 @@ ilist_test$(EXEEXT): $(ilist_test_OBJECTS) $(ilist_test_DEPENDENCIES) $(EXTRA_il
 	@rm -f ilist_test$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ilist_test_OBJECTS) $(ilist_test_LDADD) $(LIBS)
 
+slist_test$(EXEEXT): $(slist_test_OBJECTS) $(slist_test_DEPENDENCIES) $(EXTRA_slist_test_DEPENDENCIES) 
+	@rm -f slist_test$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(slist_test_OBJECTS) $(slist_test_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -579,6 +591,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ilist_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slist_test.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -803,6 +816,13 @@ recheck: all $(check_PROGRAMS)
 ilist_test.log: ilist_test$(EXEEXT)
 	@p='ilist_test$(EXEEXT)'; \
 	b='ilist_test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+slist_test.log: slist_test$(EXEEXT)
+	@p='slist_test$(EXEEXT)'; \
+	b='slist_test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

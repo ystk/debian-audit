@@ -128,6 +128,7 @@ static void usage(void)
      "    -v                  Version\n"
      "    -w <path>           Insert watch at <path>\n"
      "    -W <path>           Remove watch at <path>\n"
+     "    --loginuid-immutable   Make loginuids unchangeable once set"
      );
 }
 
@@ -455,6 +456,34 @@ void check_rule_mismatch(int lineno, const char *option)
 	}
 }
 
+int report_status(int fd)
+{
+	int retval;
+
+	retval = audit_request_status(fd);
+	if (retval == -1) {
+		if (errno == ECONNREFUSED)
+			fprintf(stderr,	"The audit system is disabled\n");
+		return -1;
+	}
+	get_reply();
+	retval = audit_request_features(fd);
+	if (retval == -1) {
+		// errno is EINVAL if the kernel does support features API
+		if (errno == EINVAL)
+			return -2;
+		return -1;
+	}
+	get_reply();
+	return -2;
+}
+
+struct option long_opts[] =
+{
+  {"loginuid-immutable", 0, NULL, 1},
+  {NULL, 0, NULL, 0}
+};
+
 // FIXME: Change these to enums
 /*
  * returns: -3 deprecated, -2 success - no reply, -1 error - noreply,
@@ -470,8 +499,9 @@ static int setopt(int count, int lineno, char *vars[])
     key[0] = 0;
     keylen = AUDIT_MAX_KEY_LEN;
 
-    while ((retval >= 0) && (c = getopt(count, vars,
-			"hicslDvtC:e:f:r:b:a:A:d:S:F:m:R:w:W:k:p:q:")) != EOF) {
+    while ((retval >= 0) && (c = getopt_long(count, vars,
+			"hicslDvtC:e:f:r:b:a:A:d:S:F:m:R:w:W:k:p:q:",
+			long_opts, NULL)) != EOF) {
 	int flags = AUDIT_FILTER_UNSET;
 	rc = 10;	// Init to something impossible to see if unused.
         switch (c) {
@@ -489,11 +519,7 @@ static int setopt(int count, int lineno, char *vars[])
 		retval = -2;
 		break;
         case 's':
-		retval = audit_request_status(fd);
-		if (retval <= 0)
-			retval = -1;
-		else
-			retval = 0; /* success - just get the reply */
+		retval = report_status(fd);
 		break;
         case 'e':
 		if (optarg && ((strcmp(optarg, "0") == 0) ||
@@ -904,6 +930,14 @@ static int setopt(int count, int lineno, char *vars[])
 	case 'v':
 		printf("auditctl version %s\n", VERSION);
 		retval = -2;
+		break;
+	// Now the long options
+	case 1:
+		retval = audit_set_loginuid_immutable(fd);
+		if (retval <= 0)
+			retval = -1;
+		else
+			return -2;  // success - no reply for this
 		break;
         default: 
 		usage();
